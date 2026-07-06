@@ -1,0 +1,36 @@
+{
+  "name": "xeniia",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3001 -H 0.0.0.0",
+    "build": "next build",
+    "lint": "eslint .",
+    "db:push": "prisma db push",
+    "db:seed": "prisma db seed",
+    "db:setup": "node prisma/setup-db.mjs && prisma generate && prisma db seed"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "next": "latest",
+    "next-auth": "^5.0.0-beta.31",
+    "react": "latest",
+    "react-dom": "latest"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "latest",
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "better-sqlite3": "^12.11.1",
+    "eslint": "latest",
+    "eslint-config-next": "latest",
+    "prisma": "^5.22.0",
+    "tailwindcss": "latest",
+    "tsx": "latest",
+    "typescript": "latest"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  }
+}

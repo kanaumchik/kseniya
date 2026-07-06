@@ -1,0 +1,44 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:../data/xeniia.db"
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String
+  passwordHash String
+  role         String    @default("USER")
+  timeZone     String
+  createdAt    DateTime  @default(now())
+  bookings     Booking[]
+}
+
+model Booking {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  startsAt        DateTime
+  endsAt          DateTime
+  clientTimeZone  String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  status          String   @default("ACTIVE")
+  cancelledAt     DateTime?
+
+  @@index([startsAt])
+  @@index([startsAt, endsAt])
+  @@index([status, startsAt])
+}
+
+model DaySchedule {
+  id                  String   @id @default(cuid())
+  dateKey             String   @unique
+  slotDurationMinutes Int      @default(120)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
