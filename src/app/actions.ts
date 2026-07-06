@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { AuthError } from "next-auth";
 import { auth, signIn, signOut } from "@/auth";
+import { hashPassword } from "@/lib/password";
 import { prisma } from "@/lib/prisma";
 import {
   allowedSlotDurations,
@@ -30,6 +31,80 @@ export async function loginAction(_previousState: string | undefined, formData: 
 
 export async function logoutAction() {
   await signOut({ redirectTo: "/" });
+}
+
+export async function registerAction(_previousState: string | undefined, formData: FormData) {
+  const name = String(formData.get("name") ?? "").trim();
+  const gender = String(formData.get("gender") ?? "");
+  const birthDate = String(formData.get("birthDate") ?? "").trim();
+  const city = String(formData.get("city") ?? "").trim();
+  const phone = String(formData.get("phone") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const password = String(formData.get("password") ?? "");
+  const passwordRepeat = String(formData.get("passwordRepeat") ?? "");
+  const consent = String(formData.get("consent") ?? "");
+  const timeZone = String(formData.get("timeZone") ?? "Asia/Yekaterinburg") || "Asia/Yekaterinburg";
+
+  if (!name || !gender || !birthDate || !city || !phone || !email || !password || !passwordRepeat) {
+    return "Заполните все поля регистрации.";
+  }
+
+  if (!["male", "female"].includes(gender)) {
+    return "Укажите пол.";
+  }
+
+  if (!isValidBirthDate(birthDate)) {
+    return "Укажите дату рождения в формате ДД.ММ.ГГГГ.";
+  }
+
+  if (!/^\+7\(\d{3}\)-\d{3}-\d{2}-\d{2}$/.test(phone)) {
+    return "Укажите телефон в формате +7(ХХХ)-ХХХ-ХХ-ХХ.";
+  }
+
+  if (!email.includes("@")) {
+    return "Укажите корректный e-mail.";
+  }
+
+  if (password.length < 6 || passwordRepeat.length < 6) {
+    return "Пароль должен быть не короче 6 символов.";
+  }
+
+  if (password !== passwordRepeat) {
+    return "Пароли не совпадают.";
+  }
+
+  if (consent !== "accepted") {
+    return "Для регистрации нужно принять условия и согласие на обработку персональных данных.";
+  }
+
+  const existingUser = await prisma.user.findUnique({ where: { email } });
+
+  if (existingUser) {
+    return "Пользователь с таким e-mail уже зарегистрирован.";
+  }
+
+  await prisma.user.create({
+    data: {
+      email,
+      name,
+      passwordHash: await hashPassword(password),
+      timeZone,
+    },
+  });
+
+  try {
+    await signIn("credentials", {
+      email,
+      password,
+      redirectTo: "/dashboard",
+    });
+  } catch (error) {
+    if (error instanceof AuthError) {
+      return "Регистрация прошла, но войти автоматически не удалось. Попробуйте войти вручную.";
+    }
+
+    throw error;
+  }
 }
 
 export async function createBookingAction(formData: FormData) {
@@ -251,4 +326,17 @@ async function ensureSlotCanBeBooked(startsAt: Date, endsAt: Date, excludeBookin
 
 function revalidateDashboard() {
   revalidatePath("/dashboard");
+}
+
+function isValidBirthDate(value: string) {
+  const match = /^(0[1-9]|[12][0-9]|3[01])\.(0[1-9]|1[0-2])\.(19|20)\d{2}$/.exec(value);
+
+  if (!match) {
+    return false;
+  }
+
+  const [day, month, year] = value.split(".").map(Number);
+  const date = new Date(year, month - 1, day);
+
+  return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
 }

@@ -1,7 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
+import { AuthModal } from "@/components/AuthModal";
 import { BookingCalendar } from "@/components/BookingCalendar";
 import { BookingModal } from "@/components/BookingModal";
+import { ProfileMenu } from "@/components/ProfileMenu";
 import { SignOutButton } from "@/components/SignOutButton";
 import { type Slot } from "@/lib/slots";
 
@@ -13,7 +15,7 @@ type UserOption = {
 
 type DashboardHomeProps = {
   name: string | null | undefined;
-  role: "USER" | "ADMIN";
+  role: "USER" | "ADMIN" | null;
   timeZone: string;
   slots: Slot[];
   users: UserOption[];
@@ -22,10 +24,10 @@ type DashboardHomeProps = {
 };
 
 const navItems = [
-  { href: "#diagnostics", label: "Диагностика" },
-  { href: "#approach", label: "Подход" },
-  { href: "#format", label: "Формат" },
-  { href: "#about", label: "Обо мне" },
+  "О проекте",
+  "Сессии и программы",
+  "Диагностика",
+  "Обо мне",
 ];
 
 const symptoms = [
@@ -58,11 +60,14 @@ const themes = [
 
 export function DashboardHome({ name, role, timeZone, slots, users, year, month }: DashboardHomeProps) {
   const bookingTitle = role === "ADMIN" ? "Календарь и управление слотами" : "Выберите дату и время";
-  const buttonLabel = role === "ADMIN" ? "Открыть календарь" : "Записаться на консультацию";
 
-  function renderBookingModal(label = buttonLabel, variant: "primary" | "nav" = "primary") {
+  function renderBookingCta() {
+    if (!role) {
+      return <AuthModal triggerLabel="Записаться на диагностику" variant="hero" />;
+    }
+
     return (
-      <BookingModal buttonLabel={label} title={bookingTitle} variant={variant}>
+      <BookingModal buttonLabel="Записаться на диагностику" title={bookingTitle}>
         <BookingCalendar role={role} slots={slots} timeZone={timeZone} users={users} year={year} month={month} />
       </BookingModal>
     );
@@ -70,56 +75,48 @@ export function DashboardHome({ name, role, timeZone, slots, users, year, month 
 
   return (
     <main className="min-h-screen bg-[var(--background)] text-white">
-      <header className="sticky top-0 z-40 border-b border-[var(--line)] bg-black/[0.88] backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-4 lg:px-10">
-          <Link href="/dashboard" className="leading-none">
-            <p className="font-serif text-xl uppercase tracking-[0.12em] text-[var(--gold-light)]">Ксения Иванова</p>
-            <p className="mt-1 text-[0.62rem] uppercase tracking-[0.32em] text-[var(--muted)]">Терапия души и реализации</p>
+      <header className="sticky top-0 z-40 border-b border-white/[0.08] bg-[#050505]/90 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-3.5 lg:px-10">
+          <Link href="/" className="min-w-0 leading-none">
+            <p className="font-serif text-lg uppercase text-[var(--gold-light)] sm:text-xl">Ксения Наумчик</p>
+            <p className="mt-1 max-w-[13rem] truncate text-[0.62rem] uppercase text-[var(--muted)] sm:max-w-none">
+              Автор трансформационных программ
+            </p>
           </Link>
 
-          <nav className="hidden items-center gap-9 text-sm text-white/82 lg:flex">
+          <nav className="hidden items-center gap-1.5 text-sm text-white/72 xl:flex">
             {navItems.map((item) => (
-              <a className="transition hover:text-[var(--gold)]" href={item.href} key={item.href}>
-                {item.label}
-              </a>
+              <button className="nav-link" key={item} type="button">
+                {item}
+              </button>
             ))}
           </nav>
 
-          <div className="flex items-center gap-3">
-            {role === "USER" ? (
-              <Link className="hidden text-sm text-white/82 transition hover:text-[var(--gold)] sm:inline" href="/dashboard/bookings">
-                Мои записи
-              </Link>
-            ) : null}
-            {renderBookingModal(role === "ADMIN" ? "Календарь" : "Записаться", "nav")}
-            <SignOutButton />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button className="nav-link insight-nav-link hidden text-sm sm:inline-flex" type="button">
+              <span aria-hidden="true">✦</span>
+              <span>Получить подсказку</span>
+            </button>
+            {role ? <ProfileMenu name={name} /> : null}
+            {role ? <SignOutButton /> : <AuthModal />}
           </div>
         </div>
       </header>
 
       <section className="relative overflow-hidden border-b border-[var(--line)]">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_38%,rgba(214,170,79,0.18),transparent_22%),radial-gradient(circle_at_18%_80%,rgba(214,170,79,0.12),transparent_18%)]" />
-        <div className="mx-auto grid min-h-[620px] max-w-7xl grid-cols-1 items-stretch lg:grid-cols-[0.92fr_1.08fr]">
-          <div className="relative z-10 flex flex-col justify-center px-6 py-14 sm:px-10 lg:py-20 lg:pl-20">
-            <p className="mb-5 text-xs uppercase tracking-[0.34em] text-[var(--gold)]">Здравствуйте, {name ?? "гость"}</p>
-            <h1 className="max-w-[34rem] font-serif text-5xl leading-[1.08] text-[var(--gold-light)] sm:text-6xl">
-              Возвращение к себе, своей силе и внутренней опоре
+        <div className="absolute inset-0 bg-[linear-gradient(110deg,#050505_0%,#080706_44%,rgba(5,5,5,0.52)_100%)]" />
+        <div className="mx-auto grid min-h-[640px] max-w-7xl grid-cols-1 items-stretch lg:grid-cols-[0.84fr_1.16fr]">
+          <div className="relative z-10 flex flex-col justify-center px-6 py-16 sm:px-10 lg:py-20 lg:pl-20">
+            <p className="hero-kicker">Диагностика состояния и запроса</p>
+            <h1 className="mt-5 max-w-[36rem] font-serif text-[2.7rem] leading-[1.04] text-[var(--gold-light)] sm:text-[4rem] lg:text-[4.35rem]">
+              Верни свою силу, раскрой потенциал и познакомься с собой новым
             </h1>
-            <p className="mt-7 max-w-md text-base leading-7 text-white/78">
-              Диагностика для тех, кто чувствует, что старые сценарии больше не работают, а новый путь ещё не стал ясным.
+            <p className="mt-6 max-w-[31rem] text-lg leading-8 text-white/76">
+              Пространство для поддержки, трансформации и переосмысления опыта с системным подходом и глубиной
             </p>
-            <p className="mt-5 max-w-md text-sm leading-7 text-white/66">
-              Через разговор и работу в поле мы смотрим, где вы сейчас, куда на самом деле хотите прийти и что удерживает вас в прежнем состоянии.
-            </p>
-            <div className="mt-8 flex flex-wrap items-center gap-5">
-              {renderBookingModal()}
-              {role === "USER" ? (
-                <Link className="secondary-button px-5 py-3 text-sm" href="/dashboard/bookings">
-                  Мои записи
-                </Link>
-              ) : null}
+            <div className="mt-9 flex flex-wrap items-center gap-4">
+              {renderBookingCta()}
             </div>
-            <p className="mt-5 text-xs text-white/52">120 минут · онлайн · бережная глубокая работа</p>
           </div>
 
           <div className="relative min-h-[420px] lg:min-h-[620px]">
@@ -129,9 +126,9 @@ export function DashboardHome({ name, role, timeZone, slots, users, year, month 
               fill
               priority
               sizes="(max-width: 1024px) 100vw, 54vw"
-              src="/images/hero-psychologist.png"
+              src="/images/xeniia-naumchik-hero.png"
             />
-            <div className="absolute inset-0 bg-[linear-gradient(90deg,#050505_0%,rgba(5,5,5,0.62)_14%,rgba(5,5,5,0.12)_45%),linear-gradient(0deg,#050505_0%,transparent_32%)]" />
+            <div className="absolute inset-0 bg-[linear-gradient(90deg,#050505_0%,rgba(5,5,5,0.72)_18%,rgba(5,5,5,0.1)_48%),linear-gradient(0deg,#050505_0%,transparent_30%)]" />
           </div>
         </div>
       </section>
@@ -161,7 +158,6 @@ export function DashboardHome({ name, role, timeZone, slots, users, year, month 
             <p className="mt-4 max-w-lg text-sm leading-7 text-white/68">
               Формат помогает не просто понять проблему, а соприкоснуться с тем, что за ней стоит.
             </p>
-            <div className="mt-7">{renderBookingModal()}</div>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-5">
@@ -214,7 +210,6 @@ export function DashboardHome({ name, role, timeZone, slots, users, year, month 
               <li>• ключевое внутреннее препятствие</li>
               <li>• возможный вектор дальнейшей работы</li>
             </ul>
-            <div className="mt-7">{renderBookingModal()}</div>
           </article>
 
           <article className="relative overflow-hidden px-6 py-10 lg:px-10" id="about">
@@ -235,10 +230,6 @@ export function DashboardHome({ name, role, timeZone, slots, users, year, month 
           <p className="max-w-2xl font-serif text-2xl uppercase leading-relaxed text-[var(--gold-light)]">
             Возможно, сейчас вам не нужен новый рывок. Возможно, сначала нужно увидеть, что именно удерживает вас на месте.
           </p>
-          <div className="text-center">
-            {renderBookingModal()}
-            <p className="mt-4 text-xs text-white/52">После заявки я свяжусь с вами и уточню запрос.</p>
-          </div>
         </div>
       </section>
     </main>
