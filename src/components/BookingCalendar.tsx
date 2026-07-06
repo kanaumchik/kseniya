@@ -1,13 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  adminCreateBookingAction,
-  createBookingAction,
-  updateDayDurationAction,
-} from "@/app/actions";
-import { allowedSlotDurations, type Slot, groupSlotsByDate } from "@/lib/slots";
-import { formatTimeRange } from "@/lib/time";
+import { adminCreateBookingAction, createBookingAction, rescheduleBookingAction } from "@/app/actions";
+import { type Slot, groupSlotsByDate } from "@/lib/slots";
+import { formatTimeOnly, supportedTimeZones } from "@/lib/time";
 
 type UserOption = {
   id: string;
@@ -20,148 +16,175 @@ type BookingCalendarProps = {
   role: "USER" | "ADMIN";
   timeZone: string;
   users?: UserOption[];
-  year: number;
-  month: number;
+  currentUser?: UserOption;
+  rescheduleBookingId?: string;
+  submitLabel?: string;
 };
 
-export function BookingCalendar({ slots, role, timeZone, users = [], year, month }: BookingCalendarProps) {
-  const groupedSlots = useMemo(() => groupSlotsByDate(slots, timeZone), [slots, timeZone]);
-  const days = Object.entries(groupedSlots);
+export function BookingCalendar({
+  slots,
+  role,
+  timeZone,
+  users = [],
+  currentUser,
+  rescheduleBookingId,
+  submitLabel = rescheduleBookingId ? "Перенести" : "Выбрать",
+}: BookingCalendarProps) {
+  const [selectedTimeZone, setSelectedTimeZone] = useState(timeZone);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState(currentUser?.id ?? users[0]?.id ?? "");
+  const availableSlots = useMemo(
+    () => slots.filter((slot) => !slot.isBooked && !slot.isBlocked && !slot.isDayOff),
+    [slots],
+  );
+  const groupedSlots = useMemo(() => groupSlotsByDate(availableSlots, selectedTimeZone), [availableSlots, selectedTimeZone]);
+  const days = Object.entries(groupedSlots).sort(([firstDate], [secondDate]) => firstDate.localeCompare(secondDate));
+  const currentDaySlots = selectedDate ? groupedSlots[selectedDate] ?? [] : [];
+  const userOptions = useMemo(() => {
+    const options = currentUser ? [currentUser, ...users] : users;
+    const seen = new Set<string>();
+
+    return options.filter((user) => {
+      if (seen.has(user.id)) {
+        return false;
+      }
+
+      seen.add(user.id);
+      return true;
+    });
+  }, [currentUser, users]);
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="font-serif text-2xl text-[var(--gold-light)]">Календарь консультаций</h2>
-          <p className="mt-1 text-sm text-[var(--muted)]">Время показано в часовом поясе: {timeZone}</p>
+          <h2 className="font-serif text-2xl text-[var(--gold-light)]">Календарь диагностики</h2>
+          <p className="mt-1 text-sm text-[var(--muted)]">Сначала выберите дату, затем время начала.</p>
         </div>
-        {role === "ADMIN" ? <MonthPicker month={month} year={year} /> : null}
+
+        <label className="grid gap-2 text-sm font-medium text-white/86">
+          Часовой пояс
+          <select className="field min-w-64 text-sm" value={selectedTimeZone} onChange={(event) => setSelectedTimeZone(event.target.value)}>
+            {supportedTimeZones.map((zone) => (
+              <option key={zone.value} value={zone.value}>
+                {zone.label}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
 
       {days.length > 0 ? (
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {days.map(([date, daySlots]) => (
-            <article className="gold-card p-4" key={date}>
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <h3 className="text-base font-semibold text-white">{formatDateLabel(date)}</h3>
-                {role === "ADMIN" ? <DayDurationForm dateKey={daySlots[0].dateKey} value={daySlots[0].durationMinutes} /> : null}
-              </div>
-              <div className="mt-3 grid gap-2">
-                {daySlots.map((slot) => (
-                  <SlotRow key={slot.id} role={role} slot={slot} timeZone={timeZone} users={users} />
+        <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
+          <div className="gold-card p-4">
+            <p className="text-sm font-semibold text-white">Доступные даты</p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {days.map(([date, daySlots]) => (
+                <button
+                  className={selectedDate === date ? "calendar-date calendar-date-active" : "calendar-date"}
+                  key={date}
+                  onClick={() => setSelectedDate(date)}
+                  type="button"
+                >
+                  <span>{formatDateLabel(date)}</span>
+                  <span className="text-xs text-[var(--muted)]">{daySlots.length} сл.</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="gold-card p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm font-semibold text-white">Доступное время</p>
+              {role === "ADMIN" && !rescheduleBookingId ? (
+                <label className="grid gap-1 text-xs font-medium text-white/78">
+                  Клиент
+                  <select className="field min-w-60 text-sm" value={selectedUserId} onChange={(event) => setSelectedUserId(event.target.value)} required>
+                    {userOptions.map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {user.id === currentUser?.id ? "Для себя" : user.name} ({user.email})
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
+            </div>
+
+            {selectedDate ? (
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                {currentDaySlots.map((slot) => (
+                  <SlotSubmitButton
+                    currentUserId={currentUser?.id}
+                    key={slot.id}
+                    role={role}
+                    selectedTimeZone={selectedTimeZone}
+                    selectedUserId={selectedUserId}
+                    slot={slot}
+                    submitLabel={submitLabel}
+                    rescheduleBookingId={rescheduleBookingId}
+                  />
                 ))}
               </div>
-            </article>
-          ))}
+            ) : (
+              <p className="mt-3 rounded-md border border-[var(--line)] bg-black/20 px-3 py-4 text-sm text-[var(--muted)]">
+                Выберите дату слева, чтобы увидеть доступное время.
+              </p>
+            )}
+          </div>
         </div>
       ) : (
-        <div className="gold-card p-5 text-sm text-[var(--muted)]">
-          Свободных слотов сейчас нет.
-        </div>
+        <div className="gold-card p-5 text-sm text-[var(--muted)]">Свободных дат сейчас нет.</div>
       )}
     </section>
   );
 }
 
-function SlotRow({
+function SlotSubmitButton({
   slot,
   role,
-  timeZone,
-  users,
+  selectedTimeZone,
+  selectedUserId,
+  currentUserId,
+  submitLabel,
+  rescheduleBookingId,
 }: {
   slot: Slot;
   role: "USER" | "ADMIN";
-  timeZone: string;
-  users: UserOption[];
+  selectedTimeZone: string;
+  selectedUserId: string;
+  currentUserId: string | undefined;
+  submitLabel: string;
+  rescheduleBookingId?: string;
 }) {
-  const startsAt = new Date(slot.startsAt);
-  const endsAt = new Date(slot.endsAt);
+  const action = rescheduleBookingId ? rescheduleBookingAction : role === "ADMIN" ? adminCreateBookingAction : createBookingAction;
 
   return (
-    <div className="flex min-h-16 flex-col gap-3 rounded-md border border-[var(--line)] bg-[rgba(255,255,255,0.03)] px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <p className="text-sm font-medium text-white">{formatTimeRange(startsAt, endsAt, timeZone)}</p>
-        <p className={slot.isBooked ? "text-xs text-[var(--danger)]" : "text-xs text-[var(--gold)]"}>
-          {slot.isBooked ? "Занято" : "Свободно"}
-        </p>
-        {role === "ADMIN" && slot.bookedBy ? <p className="mt-1 text-xs text-[var(--muted)]">{slot.bookedBy}</p> : null}
-      </div>
-
-      {role === "USER" && !slot.isBooked ? (
-        <form action={createBookingAction}>
-          <input name="startsAt" type="hidden" value={slot.startsAt} />
-          <input name="endsAt" type="hidden" value={slot.endsAt} />
-          <button className="primary-button w-full px-3 py-2 text-sm sm:w-auto" type="submit">
-            Выбрать
-          </button>
-        </form>
-      ) : null}
-
-      {role === "ADMIN" && !slot.isBooked ? (
-        <form action={adminCreateBookingAction} className="grid gap-2 sm:min-w-56">
-          <input name="startsAt" type="hidden" value={slot.startsAt} />
-          <input name="endsAt" type="hidden" value={slot.endsAt} />
-          <select className="field text-sm" name="userId" required>
-            <option value="">Пользователь</option>
-            {users.map((user) => (
-              <option key={user.id} value={user.id}>
-                {user.name} ({user.email})
-              </option>
-            ))}
-          </select>
-          <button className="primary-button px-3 py-2 text-sm" type="submit">
-            Забронировать
-          </button>
-        </form>
-      ) : null}
-    </div>
-  );
-}
-
-function DayDurationForm({ dateKey, value }: { dateKey: string; value: number }) {
-  return (
-    <form action={updateDayDurationAction} className="flex items-center gap-2">
-      <input name="dateKey" type="hidden" value={dateKey} />
-      <select className="field h-9 text-xs" defaultValue={value} name="durationMinutes" aria-label="Длительность консультации">
-        {allowedSlotDurations.map((duration) => (
-          <option key={duration} value={duration}>
-            {duration / 60 === 1.5 ? "1,5 часа" : `${duration / 60} ч`}
-          </option>
-        ))}
-      </select>
-      <button className="secondary-button h-9 px-3 text-xs" type="submit">
-        OK
+    <form action={action}>
+      {rescheduleBookingId ? <input name="bookingId" type="hidden" value={rescheduleBookingId} /> : null}
+      <input name="startsAt" type="hidden" value={slot.startsAt} />
+      <input name="endsAt" type="hidden" value={slot.endsAt} />
+      <input name="timeZone" type="hidden" value={selectedTimeZone} />
+      {role === "ADMIN" && !rescheduleBookingId ? <input name="userId" type="hidden" value={selectedUserId || currentUserId} /> : null}
+      <button className="secondary-button flex w-full items-center justify-between px-3 py-2 text-sm" type="submit">
+        <span>{formatTimeOnly(new Date(slot.startsAt), selectedTimeZone)}</span>
+        <span className="text-[var(--gold-light)]">{submitLabel}</span>
       </button>
     </form>
   );
 }
 
-function MonthPicker({ year, month }: { year: number; month: number }) {
-  const [value, setValue] = useState(`${year}-${String(month).padStart(2, "0")}`);
-
-  function updateMonth(nextValue: string) {
-    setValue(nextValue);
-    const url = new URL(window.location.href);
-    const [nextYear, nextMonth] = nextValue.split("-");
-    url.searchParams.set("year", nextYear);
-    url.searchParams.set("month", nextMonth);
-    window.location.href = url.toString();
-  }
-
-  return (
-    <label className="text-sm font-medium text-white">
-      Месяц и год
-      <input className="field ml-3" onChange={(event) => updateMonth(event.target.value)} type="month" value={value} />
-    </label>
-  );
-}
-
 function formatDateLabel(date: string) {
   const [year, month, day] = date.split("-").map(Number);
-  return new Intl.DateTimeFormat("ru-RU", {
-    weekday: "long",
+  const dateValue = new Date(Date.UTC(year, month - 1, day));
+  const weekday = new Intl.DateTimeFormat("ru-RU", {
+    weekday: "short",
+    timeZone: "UTC",
+  }).format(dateValue);
+  const readableDate = new Intl.DateTimeFormat("ru-RU", {
     day: "numeric",
     month: "long",
-    year: "numeric",
-  }).format(new Date(Date.UTC(year, month - 1, day)));
+    timeZone: "UTC",
+  }).format(dateValue);
+
+  return `${weekday}, ${readableDate}`;
 }

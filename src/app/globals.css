@@ -106,6 +106,7 @@ select option {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 0.45rem;
   border: 0;
   background: transparent;
   color: rgba(255, 255, 255, 0.82);
@@ -115,7 +116,7 @@ select option {
 }
 
 .profile-button:hover {
-  transform: scale(1.08);
+  transform: translateY(-1px);
 }
 
 .profile-button:hover .profile-icon {
@@ -153,6 +154,31 @@ select option {
   min-height: 2.5rem;
   border: 1px solid transparent;
   color: rgba(255, 255, 255, 0.72);
+}
+
+.calendar-date {
+  display: flex;
+  min-height: 3.25rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border: 1px solid rgba(232, 197, 122, 0.14);
+  border-radius: 0.375rem;
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.82);
+  padding: 0.75rem 0.9rem;
+  text-align: left;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+.calendar-date:hover,
+.calendar-date-active {
+  border-color: rgba(232, 197, 122, 0.55);
+  background: rgba(214, 170, 79, 0.12);
+  color: var(--gold-light);
 }
 
 .auth-tab:hover,
@@ -285,4 +311,24 @@ select option {
   font-weight: 700;
   padding: 0.45rem 0.72rem;
   text-transform: uppercase;
+}
+
+@media (min-width: 1024px) {
+  .hero-image {
+    left: auto !important;
+    right: -4vw !important;
+    width: min(72vw, 1180px) !important;
+    object-position: right top;
+    transform: translateY(32px);
+  }
+}
+
+@media (max-width: 767px) {
+  .hero-gold-button {
+    min-width: 100%;
+  }
+
+  .profile-button span:last-child {
+    display: none;
+  }
 }

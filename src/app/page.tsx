@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
 import { DashboardHome } from "@/components/DashboardHome";
 import { prisma } from "@/lib/prisma";
-import { getClientSlots, getSlotsForMonth } from "@/lib/slots";
+import { getClientSlots } from "@/lib/slots";
 import { psychologistTimeZone } from "@/lib/time";
 
 export default async function Home() {
@@ -10,10 +10,9 @@ export default async function Home() {
   const isAdmin = session?.user.role === "ADMIN";
   const role = session?.user.role ?? null;
   const timeZone = session?.user ? (isAdmin ? psychologistTimeZone : session.user.timeZone) : psychologistTimeZone;
-  const slots = session?.user ? (isAdmin ? await getSlotsForMonth(now.getFullYear(), now.getMonth() + 1) : await getClientSlots()) : [];
+  const slots = session?.user ? await getClientSlots() : [];
   const users = isAdmin
     ? await prisma.user.findMany({
-        where: { role: "USER" },
         select: {
           id: true,
           name: true,
@@ -25,6 +24,8 @@ export default async function Home() {
 
   return (
     <DashboardHome
+      email={session?.user.email}
+      id={session?.user.id}
       month={now.getMonth() + 1}
       name={session?.user.name}
       role={role}

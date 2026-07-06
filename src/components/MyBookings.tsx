@@ -1,4 +1,6 @@
-import { cancelBookingAction, rescheduleBookingAction } from "@/app/actions";
+import { cancelBookingAction } from "@/app/actions";
+import { BookingCalendar } from "@/components/BookingCalendar";
+import { BookingModal } from "@/components/BookingModal";
 import { type Slot } from "@/lib/slots";
 import { formatDateTime, formatTimeRange } from "@/lib/time";
 
@@ -14,12 +16,21 @@ type MyBookingsProps = {
   bookings: BookingSummary[];
   availableSlots: Slot[];
   timeZone: string;
+  currentUser: {
+    id: string;
+    name: string;
+    email: string;
+  };
 };
 
-export function MyBookings({ bookings, availableSlots, timeZone }: MyBookingsProps) {
+export function MyBookings({ bookings, availableSlots, timeZone, currentUser }: MyBookingsProps) {
   const now = new Date();
-  const actualBookings = bookings.filter((booking) => booking.status === "ACTIVE" && new Date(booking.endsAt) >= now);
-  const archivedBookings = bookings.filter((booking) => booking.status !== "ACTIVE" || new Date(booking.endsAt) < now);
+  const actualBookings = bookings
+    .filter((booking) => booking.status === "ACTIVE" && new Date(booking.endsAt) >= now)
+    .sort((first, second) => new Date(first.startsAt).getTime() - new Date(second.startsAt).getTime());
+  const archivedBookings = bookings
+    .filter((booking) => booking.status !== "ACTIVE" || new Date(booking.endsAt) < now)
+    .sort((first, second) => new Date(second.startsAt).getTime() - new Date(first.startsAt).getTime());
 
   return (
     <section className="mx-auto w-full max-w-6xl px-4 pt-8">
@@ -34,7 +45,7 @@ export function MyBookings({ bookings, availableSlots, timeZone }: MyBookingsPro
         <div className="mt-4 grid gap-3">
           {actualBookings.length > 0 ? (
             actualBookings.map((booking) => (
-              <BookingItem booking={booking} availableSlots={availableSlots} key={booking.id} timeZone={timeZone} />
+              <BookingItem booking={booking} availableSlots={availableSlots} currentUser={currentUser} key={booking.id} timeZone={timeZone} />
             ))
           ) : (
             <p className="rounded-md border border-[var(--line)] bg-[var(--surface-strong)] px-3 py-3 text-sm text-[var(--muted)]">
@@ -66,10 +77,16 @@ export function MyBookings({ bookings, availableSlots, timeZone }: MyBookingsPro
 function BookingItem({
   booking,
   availableSlots,
+  currentUser,
   timeZone,
 }: {
   booking: BookingSummary;
   availableSlots: Slot[];
+  currentUser: {
+    id: string;
+    name: string;
+    email: string;
+  };
   timeZone: string;
 }) {
   const startsAt = new Date(booking.startsAt);
@@ -85,7 +102,7 @@ function BookingItem({
         </div>
 
         {canChange ? (
-          <div className="grid gap-2 sm:grid-cols-[auto_1fr] lg:min-w-[34rem]">
+          <div className="flex flex-wrap gap-2">
             <form action={cancelBookingAction}>
               <input name="bookingId" type="hidden" value={booking.id} />
               <button className="secondary-button w-full px-3 py-2 text-sm" type="submit">
@@ -93,20 +110,16 @@ function BookingItem({
               </button>
             </form>
 
-            <form action={rescheduleBookingAction} className="grid gap-2 sm:grid-cols-[1fr_auto]">
-              <input name="bookingId" type="hidden" value={booking.id} />
-              <select className="field text-sm" name="slot" required>
-                <option value="">Новый слот</option>
-                {availableSlots.map((slot) => (
-                  <option key={slot.id} value={`${slot.startsAt}|${slot.endsAt}`}>
-                    {formatDateTime(new Date(slot.startsAt), timeZone)}
-                  </option>
-                ))}
-              </select>
-              <button className="primary-button px-3 py-2 text-sm" disabled={availableSlots.length === 0} type="submit">
-                Перенести
-              </button>
-            </form>
+            <BookingModal buttonLabel="Перенести" title="Перенос диагностики" variant="nav">
+              <BookingCalendar
+                currentUser={currentUser}
+                rescheduleBookingId={booking.id}
+                role="USER"
+                slots={availableSlots}
+                submitLabel="Перенести"
+                timeZone={timeZone}
+              />
+            </BookingModal>
           </div>
         ) : null}
       </div>

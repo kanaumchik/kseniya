@@ -1,5 +1,7 @@
 "use server";
 
+import { mkdir, writeFile } from "node:fs/promises";
+import path from "node:path";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { AuthError } from "next-auth";
@@ -12,6 +14,7 @@ import {
   isGeneratedSlot,
   isWithinUserBookingWindow,
 } from "@/lib/slots";
+import { formatDateKey, getTimeZoneForCity, psychologistTimeZone, supportedTimeZones } from "@/lib/time";
 
 export async function loginAction(_previousState: string | undefined, formData: FormData) {
   try {
@@ -43,7 +46,7 @@ export async function registerAction(_previousState: string | undefined, formDat
   const password = String(formData.get("password") ?? "");
   const passwordRepeat = String(formData.get("passwordRepeat") ?? "");
   const consent = String(formData.get("consent") ?? "");
-  const timeZone = String(formData.get("timeZone") ?? "Asia/Yekaterinburg") || "Asia/Yekaterinburg";
+  const timeZone = getTimeZoneForCity(city);
 
   if (!name || !gender || !birthDate || !city || !phone || !email || !password || !passwordRepeat) {
     return "Заполните все поля регистрации.";
@@ -87,6 +90,10 @@ export async function registerAction(_previousState: string | undefined, formDat
     data: {
       email,
       name,
+      gender,
+      birthDate,
+      city,
+      phone,
       passwordHash: await hashPassword(password),
       timeZone,
     },
@@ -109,17 +116,17 @@ export async function registerAction(_previousState: string | undefined, formDat
 
 export async function createBookingAction(formData: FormData) {
   const session = await requireSession();
-  assertUser(session.user.role);
 
   const { startsAt, endsAt } = parseSlotDates(formData);
   await ensureUserSlotCanBeBooked(startsAt, endsAt);
+  const clientTimeZone = normalizeTimeZone(String(formData.get("timeZone") ?? session.user.timeZone));
 
   await prisma.booking.create({
     data: {
       userId: session.user.id,
       startsAt,
       endsAt,
-      clientTimeZone: session.user.timeZone,
+      clientTimeZone,
       status: "ACTIVE",
     },
   });
@@ -138,12 +145,11 @@ export async function adminCreateBookingAction(formData: FormData) {
     throw new Error("Нельзя записывать пользователя на прошедшее время.");
   }
 
-  await ensureSlotCanBeBooked(startsAt, endsAt);
+  await ensureSlotCanBeBooked(startsAt, endsAt, undefined, { admin: true });
 
   const user = await prisma.user.findFirst({
     where: {
       id: userId,
-      role: "USER",
     },
     select: {
       id: true,
@@ -170,13 +176,12 @@ export async function adminCreateBookingAction(formData: FormData) {
 
 export async function cancelBookingAction(formData: FormData) {
   const session = await requireSession();
-  assertUser(session.user.role);
 
   const bookingId = String(formData.get("bookingId") ?? "");
   const booking = await prisma.booking.findFirst({
     where: {
       id: bookingId,
-      userId: session.user.id,
+      ...(session.user.role === "ADMIN" ? {} : { userId: session.user.id }),
       status: "ACTIVE",
     },
   });
@@ -186,7 +191,7 @@ export async function cancelBookingAction(formData: FormData) {
   }
 
   if (booking.startsAt <= new Date()) {
-    throw new Error("Прошедшую или уже начавшуюся консультацию нельзя отменить.");
+    throw new Error("Прошедшую или уже начавшуюся диагностику нельзя отменить.");
   }
 
   await prisma.booking.update({
@@ -202,15 +207,15 @@ export async function cancelBookingAction(formData: FormData) {
 
 export async function rescheduleBookingAction(formData: FormData) {
   const session = await requireSession();
-  assertUser(session.user.role);
 
   const bookingId = String(formData.get("bookingId") ?? "");
   const { startsAt, endsAt } = parseSlotDates(formData);
+  const clientTimeZone = normalizeTimeZone(String(formData.get("timeZone") ?? session.user.timeZone));
 
   const booking = await prisma.booking.findFirst({
     where: {
       id: bookingId,
-      userId: session.user.id,
+      ...(session.user.role === "ADMIN" ? {} : { userId: session.user.id }),
       status: "ACTIVE",
     },
   });
@@ -220,21 +225,155 @@ export async function rescheduleBookingAction(formData: FormData) {
   }
 
   if (booking.startsAt <= new Date()) {
-    throw new Error("Прошедшую или уже начавшуюся консультацию нельзя перенести.");
+    throw new Error("Прошедшую или уже начавшуюся диагностику нельзя перенести.");
   }
 
-  await ensureUserSlotCanBeBooked(startsAt, endsAt, booking.id);
+  if (session.user.role === "ADMIN") {
+    await ensureSlotCanBeBooked(startsAt, endsAt, booking.id, { admin: true });
+  } else {
+    await ensureUserSlotCanBeBooked(startsAt, endsAt, booking.id);
+  }
 
   await prisma.booking.update({
     where: { id: booking.id },
     data: {
       startsAt,
       endsAt,
-      clientTimeZone: session.user.timeZone,
+      clientTimeZone,
     },
   });
 
   revalidateDashboard();
+}
+
+export async function updateProfileAction(_previousState: string | undefined, formData: FormData) {
+  const session = await requireSession();
+  const name = String(formData.get("name") ?? "").trim();
+  const gender = String(formData.get("gender") ?? "");
+  const birthDate = String(formData.get("birthDate") ?? "").trim();
+  const city = String(formData.get("city") ?? "").trim();
+  const phone = String(formData.get("phone") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const timeZone = normalizeTimeZone(String(formData.get("timeZone") ?? getTimeZoneForCity(city)));
+  const password = String(formData.get("password") ?? "");
+  const passwordRepeat = String(formData.get("passwordRepeat") ?? "");
+  const photo = formData.get("photo");
+
+  if (!name || !gender || !birthDate || !city || !phone || !email) {
+    return "Заполните все обязательные поля.";
+  }
+
+  if (!["male", "female"].includes(gender)) {
+    return "Укажите пол.";
+  }
+
+  if (!isValidBirthDate(birthDate)) {
+    return "Укажите дату рождения в формате ДД.ММ.ГГГГ.";
+  }
+
+  if (!/^\+7\(\d{3}\)-\d{3}-\d{2}-\d{2}$/.test(phone)) {
+    return "Укажите телефон в формате +7(ХХХ)-ХХХ-ХХ-ХХ.";
+  }
+
+  if (!email.includes("@")) {
+    return "Укажите корректный e-mail.";
+  }
+
+  if ((password || passwordRepeat) && (password.length < 6 || password !== passwordRepeat)) {
+    return "Новый пароль должен быть не короче 6 символов, оба значения должны совпадать.";
+  }
+
+  const existingUser = await prisma.user.findFirst({
+    where: {
+      email,
+      id: { not: session.user.id },
+    },
+    select: { id: true },
+  });
+
+  if (existingUser) {
+    return "Пользователь с таким e-mail уже существует.";
+  }
+
+  const photoPath = photo instanceof File && photo.size > 0 ? await saveProfilePhoto(session.user.id, photo) : undefined;
+
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: {
+      email,
+      name,
+      gender,
+      birthDate,
+      city,
+      phone,
+      timeZone,
+      ...(password ? { passwordHash: await hashPassword(password) } : {}),
+      ...(photoPath ? { photoPath } : {}),
+    },
+  });
+
+  revalidatePath("/profile");
+  revalidatePath("/");
+  revalidatePath("/dashboard");
+
+  return "Профиль сохранён.";
+}
+
+export async function hideSlotAction(formData: FormData) {
+  const session = await requireSession();
+  assertAdmin(session.user.role);
+  const { startsAt } = parseSlotDates(formData);
+  const dateKey = formatDateKey(startsAt, psychologistTimeZone);
+
+  await prisma.hiddenSlot.upsert({
+    where: { startsAt },
+    update: { dateKey },
+    create: { startsAt, dateKey },
+  });
+
+  revalidateDashboard();
+  revalidatePath("/dashboard/schedule");
+}
+
+export async function restoreSlotAction(formData: FormData) {
+  const session = await requireSession();
+  assertAdmin(session.user.role);
+  const { startsAt } = parseSlotDates(formData);
+
+  await prisma.hiddenSlot.deleteMany({ where: { startsAt } });
+
+  revalidateDashboard();
+  revalidatePath("/dashboard/schedule");
+}
+
+export async function createDayOffAction(formData: FormData) {
+  const session = await requireSession();
+  assertAdmin(session.user.role);
+  const dateKeys = formData.getAll("dateKeys").map(String).filter((dateKey) => /^\d{4}-\d{2}-\d{2}$/.test(dateKey));
+
+  await Promise.all(
+    dateKeys.map((dateKey) =>
+      prisma.dayOff.upsert({
+        where: { dateKey },
+        update: {},
+        create: { dateKey },
+      }),
+    ),
+  );
+
+  revalidateDashboard();
+  revalidatePath("/dashboard/schedule");
+}
+
+export async function cancelDayOffAction(formData: FormData) {
+  const session = await requireSession();
+  assertAdmin(session.user.role);
+  const dateKey = String(formData.get("dateKey") ?? "");
+
+  await prisma.dayOff.deleteMany({ where: { dateKey } });
+
+  revalidateDashboard();
+  revalidatePath("/dashboard/schedule");
 }
 
 export async function updateDayDurationAction(formData: FormData) {
@@ -249,7 +388,7 @@ export async function updateDayDurationAction(formData: FormData) {
   }
 
   if (!allowedSlotDurations.includes(durationMinutes as (typeof allowedSlotDurations)[number])) {
-    throw new Error("Некорректная длительность консультации.");
+    throw new Error("Некорректная длительность диагностики.");
   }
 
   await prisma.daySchedule.upsert({
@@ -276,12 +415,6 @@ async function requireSession() {
   return session;
 }
 
-function assertUser(role: "USER" | "ADMIN") {
-  if (role !== "USER") {
-    throw new Error("Действие доступно только пользователю.");
-  }
-}
-
 function assertAdmin(role: "USER" | "ADMIN") {
   if (role !== "ADMIN") {
     throw new Error("Действие доступно только администратору.");
@@ -298,7 +431,7 @@ function parseSlotDates(formData: FormData) {
   const endsAt = new Date(String(endsAtValue ?? ""));
 
   if (Number.isNaN(startsAt.getTime()) || Number.isNaN(endsAt.getTime()) || endsAt <= startsAt) {
-    throw new Error("Некорректное время консультации.");
+    throw new Error("Некорректное время диагностики.");
   }
 
   return { startsAt, endsAt };
@@ -312,8 +445,18 @@ async function ensureUserSlotCanBeBooked(startsAt: Date, endsAt: Date, excludeBo
   await ensureSlotCanBeBooked(startsAt, endsAt, excludeBookingId);
 }
 
-async function ensureSlotCanBeBooked(startsAt: Date, endsAt: Date, excludeBookingId?: string) {
-  if (!(await isGeneratedSlot(startsAt, endsAt))) {
+async function ensureSlotCanBeBooked(startsAt: Date, endsAt: Date, excludeBookingId?: string, options: { admin?: boolean } = {}) {
+  if (!(await isGeneratedSlot(startsAt, endsAt, { admin: options.admin }))) {
+    throw new Error("Выбранный слот недоступен для записи.");
+  }
+
+  const dateKey = formatDateKey(startsAt, psychologistTimeZone);
+  const [hiddenSlot, dayOff] = await Promise.all([
+    prisma.hiddenSlot.findUnique({ where: { startsAt } }),
+    prisma.dayOff.findUnique({ where: { dateKey } }),
+  ]);
+
+  if (hiddenSlot || dayOff) {
     throw new Error("Выбранный слот недоступен для записи.");
   }
 
@@ -326,6 +469,8 @@ async function ensureSlotCanBeBooked(startsAt: Date, endsAt: Date, excludeBookin
 
 function revalidateDashboard() {
   revalidatePath("/dashboard");
+  revalidatePath("/dashboard/bookings");
+  revalidatePath("/dashboard/schedule");
 }
 
 function isValidBirthDate(value: string) {
@@ -339,4 +484,21 @@ function isValidBirthDate(value: string) {
   const date = new Date(year, month - 1, day);
 
   return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
+}
+
+function normalizeTimeZone(value: string) {
+  return supportedTimeZones.some((timeZone) => timeZone.value === value) ? value : psychologistTimeZone;
+}
+
+async function saveProfilePhoto(userId: string, file: File) {
+  const extension = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+  const uploadsDir = path.join(process.cwd(), "public", "uploads", "profile");
+  const fileName = `${userId}-${Date.now()}.${extension}`;
+  const filePath = path.join(uploadsDir, fileName);
+  const bytes = Buffer.from(await file.arrayBuffer());
+
+  await mkdir(uploadsDir, { recursive: true });
+  await writeFile(filePath, bytes);
+
+  return `/uploads/profile/${fileName}`;
 }

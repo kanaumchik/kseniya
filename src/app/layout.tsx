@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Xeniia | Консультации психолога",
-  description: "Локальный сайт записи на индивидуальную консультацию психолога.",
+  description: "Локальный сайт записи на индивидуальную диагностику.",
 };
 
 export default function RootLayout({

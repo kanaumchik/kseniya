@@ -1,7 +1,45 @@
 export const psychologistTimeZone = "Asia/Yekaterinburg";
 
+export const supportedTimeZones = [
+  { value: "Asia/Yekaterinburg", label: "Екатеринбург" },
+  { value: "Europe/Moscow", label: "Москва" },
+  { value: "Europe/Kaliningrad", label: "Калининград" },
+  { value: "Asia/Samara", label: "Самара" },
+  { value: "Asia/Omsk", label: "Омск" },
+  { value: "Asia/Novosibirsk", label: "Новосибирск" },
+  { value: "Asia/Krasnoyarsk", label: "Красноярск" },
+  { value: "Asia/Irkutsk", label: "Иркутск" },
+  { value: "Asia/Yakutsk", label: "Якутск" },
+  { value: "Asia/Vladivostok", label: "Владивосток" },
+  { value: "Asia/Magadan", label: "Магадан" },
+  { value: "Asia/Kamchatka", label: "Камчатка" },
+] as const;
+
+const cityTimeZones: Record<string, string> = {
+  екатеринбург: "Asia/Yekaterinburg",
+  москва: "Europe/Moscow",
+  "санкт-петербург": "Europe/Moscow",
+  спб: "Europe/Moscow",
+  калининград: "Europe/Kaliningrad",
+  самара: "Asia/Samara",
+  омск: "Asia/Omsk",
+  новосибирск: "Asia/Novosibirsk",
+  красноярск: "Asia/Krasnoyarsk",
+  иркутск: "Asia/Irkutsk",
+  якутск: "Asia/Yakutsk",
+  владивосток: "Asia/Vladivostok",
+  магадан: "Asia/Magadan",
+  петропавловск: "Asia/Kamchatka",
+};
+
 export function getLocalTimeZone() {
   return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+}
+
+export function getTimeZoneForCity(city: string | null | undefined) {
+  const normalizedCity = (city ?? "").trim().toLowerCase();
+
+  return cityTimeZones[normalizedCity] ?? psychologistTimeZone;
 }
 
 export function formatDateTime(date: Date, timeZone: string) {
@@ -20,6 +58,14 @@ export function formatTimeRange(start: Date, end: Date, timeZone: string) {
   });
 
   return `${formatter.format(start)} - ${formatter.format(end)}`;
+}
+
+export function formatTimeOnly(date: Date, timeZone: string) {
+  return new Intl.DateTimeFormat("ru-RU", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone,
+  }).format(date);
 }
 
 export function formatDateKey(date: Date, timeZone: string) {

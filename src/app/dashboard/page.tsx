@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { DashboardHome } from "@/components/DashboardHome";
 import { prisma } from "@/lib/prisma";
-import { getClientSlots, getSlotsForMonth } from "@/lib/slots";
+import { getClientSlots } from "@/lib/slots";
 import { psychologistTimeZone } from "@/lib/time";
 
 type DashboardPageProps = {
@@ -25,10 +25,9 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const month = normalizeMonth(params.month, now.getMonth() + 1);
   const isAdmin = session.user.role === "ADMIN";
   const timeZone = isAdmin ? psychologistTimeZone : session.user.timeZone;
-  const slots = isAdmin ? await getSlotsForMonth(year, month) : await getClientSlots();
+  const slots = await getClientSlots();
   const users = isAdmin
     ? await prisma.user.findMany({
-        where: { role: "USER" },
         select: {
           id: true,
           name: true,
@@ -40,6 +39,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
   return (
     <DashboardHome
+      email={session.user.email}
+      id={session.user.id}
       month={month}
       name={session.user.name}
       role={session.user.role}

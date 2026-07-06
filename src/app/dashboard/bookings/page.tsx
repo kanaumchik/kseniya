@@ -13,10 +13,6 @@ export default async function BookingsPage() {
     redirect("/");
   }
 
-  if (session.user.role !== "USER") {
-    redirect("/dashboard");
-  }
-
   const [bookings, slots] = await Promise.all([getUserBookings(session.user.id), getClientSlots()]);
   const availableSlots = slots.filter((slot) => !slot.isBooked);
 
@@ -37,7 +33,12 @@ export default async function BookingsPage() {
         </div>
       </header>
 
-      <MyBookings availableSlots={availableSlots} bookings={bookings} timeZone={session.user.timeZone} />
+      <MyBookings
+        availableSlots={availableSlots}
+        bookings={bookings}
+        currentUser={{ id: session.user.id, name: session.user.name ?? "Профиль", email: session.user.email ?? "" }}
+        timeZone={session.user.timeZone}
+      />
     </main>
   );
 }

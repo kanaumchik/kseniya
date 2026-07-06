@@ -43,7 +43,7 @@ export function BookingModal({ buttonLabel, title, children, variant = "primary"
           <div className="relative max-h-[90vh] w-full max-w-6xl overflow-y-auto rounded-md border border-[var(--line)] bg-[var(--surface)] p-5 shadow-2xl shadow-black">
             <div className="mb-5 flex items-start justify-between gap-4 border-b border-[var(--line)] pb-4">
               <div>
-                <p className="text-xs uppercase tracking-[0.28em] text-[var(--gold)]">Запись</p>
+                <p className="text-xs uppercase tracking-[0.28em] text-[var(--gold)]">Диагностика</p>
                 <h2 className="mt-2 font-serif text-3xl text-[var(--gold-light)]">{title}</h2>
               </div>
               <button className="secondary-button px-3 py-2 text-sm" onClick={() => setIsOpen(false)} type="button" aria-label="Закрыть">
