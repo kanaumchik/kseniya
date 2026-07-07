@@ -20,6 +20,7 @@ type ConfirmDialogProps = {
   primaryForm?: string;
   onPrimaryClick?: () => void;
   onSecondary: () => void;
+  secondarySubmits?: boolean;
 };
 
 export function ConfirmDialog({
@@ -35,6 +36,7 @@ export function ConfirmDialog({
   primaryForm,
   onPrimaryClick,
   onSecondary,
+  secondarySubmits = false,
 }: ConfirmDialogProps) {
   useEffect(() => {
     function closeOnEscape(event: KeyboardEvent) {
@@ -60,23 +62,35 @@ export function ConfirmDialog({
       disabled={primaryDisabled}
       form={primaryForm}
       onClick={onPrimaryClick}
-      type={action || primaryForm ? "submit" : "button"}
+      type={!onPrimaryClick && (action || primaryForm) ? "submit" : "button"}
     >
       {primaryLabel}
     </button>
   );
   const secondaryButton = (
-    <button className="secondary-button min-h-12 w-full px-5 py-3 text-sm" type="button" onClick={onSecondary}>
+    <button className="secondary-button min-h-12 w-full px-5 py-3 text-sm" type={secondarySubmits ? "submit" : "button"} onClick={secondarySubmits ? undefined : onSecondary}>
       {secondaryLabel}
     </button>
   );
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 px-4 py-6 backdrop-blur-sm" role="dialog" aria-modal="true">
-      <div className="w-full max-w-xl overflow-hidden rounded-md border border-[rgba(232,197,122,0.22)] bg-[linear-gradient(145deg,rgba(21,20,18,0.98),rgba(9,9,8,0.98))] shadow-2xl shadow-black">
+    <div
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 px-4 py-6 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) {
+          onSecondary();
+        }
+      }}
+    >
+      <div className="relative w-full max-w-xl overflow-hidden rounded-md border border-[rgba(232,197,122,0.22)] bg-[linear-gradient(145deg,rgba(21,20,18,0.98),rgba(9,9,8,0.98))] shadow-2xl shadow-black">
+        <button className="icon-button absolute right-4 top-4 z-10" type="button" onClick={onSecondary} aria-label="Закрыть">
+          ×
+        </button>
         <div className="p-5 sm:p-6">
-          {eyebrow ? <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--gold)]">{eyebrow}</p> : null}
-          <h2 className="mt-2 font-serif text-3xl leading-tight text-[var(--gold-light)]">{title}</h2>
+          {eyebrow ? <p className="pr-12 text-xs font-semibold uppercase tracking-[0.22em] text-[var(--gold)]">{eyebrow}</p> : null}
+          <h2 className="mt-2 pr-12 font-serif text-3xl leading-tight text-[var(--gold-light)]">{title}</h2>
           {description ? <p className="mt-3 max-w-lg text-sm leading-6 text-[var(--muted)]">{description}</p> : null}
 
           {children ? <div className="mt-5 rounded-md border border-[var(--line)] bg-black/25 p-4">{children}</div> : null}

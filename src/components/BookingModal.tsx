@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 
 type BookingModalProps = {
   buttonLabel: string;
@@ -8,11 +8,21 @@ type BookingModalProps = {
   children: ReactNode;
   variant?: "primary" | "nav";
   buttonClassName?: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 };
 
-export function BookingModal({ buttonLabel, title, children, variant = "primary", buttonClassName }: BookingModalProps) {
-  const [isOpen, setIsOpen] = useState(false);
+export function BookingModal({ buttonLabel, title, children, variant = "primary", buttonClassName, open, onOpenChange }: BookingModalProps) {
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+  const isOpen = open ?? internalIsOpen;
   const triggerClassName = [variant === "nav" ? "nav-gold-button" : "hero-gold-button", buttonClassName].filter(Boolean).join(" ");
+  const setIsOpen = useCallback((nextOpen: boolean) => {
+    onOpenChange?.(nextOpen);
+
+    if (open === undefined) {
+      setInternalIsOpen(nextOpen);
+    }
+  }, [onOpenChange, open]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -32,7 +42,7 @@ export function BookingModal({ buttonLabel, title, children, variant = "primary"
       document.body.style.overflow = "";
       window.removeEventListener("keydown", closeOnEscape);
     };
-  }, [isOpen]);
+  }, [isOpen, setIsOpen]);
 
   return (
     <>
@@ -41,7 +51,16 @@ export function BookingModal({ buttonLabel, title, children, variant = "primary"
       </button>
 
       {isOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 py-6 backdrop-blur-sm" role="dialog" aria-modal="true">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 py-6 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setIsOpen(false);
+            }
+          }}
+        >
           <div className="relative max-h-[90vh] w-full max-w-6xl overflow-y-auto rounded-md border border-[var(--line)] bg-[var(--surface)] p-5 shadow-2xl shadow-black">
             <div className="mb-5 flex items-start justify-between gap-4 border-b border-[var(--line)] pb-4">
               <div>

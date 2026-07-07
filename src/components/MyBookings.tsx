@@ -115,6 +115,7 @@ function BookingItem({
   timeZone: string;
 }) {
   const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
+  const [isRescheduleOpen, setIsRescheduleOpen] = useState(false);
   const startsAt = new Date(booking.startsAt);
   const canChange = startsAt > new Date();
 
@@ -131,7 +132,14 @@ function BookingItem({
 
         {canChange ? (
           <div className="grid gap-3 lg:w-80">
-            <BookingModal buttonClassName="!min-h-16 !w-full !px-6 !py-4 !text-lg" buttonLabel="Перенести" title="Перенос диагностики" variant="nav">
+            <BookingModal
+              buttonClassName="!min-h-16 !w-full !px-6 !py-4 !text-lg"
+              buttonLabel="Перенести"
+              onOpenChange={setIsRescheduleOpen}
+              open={isRescheduleOpen}
+              title="Перенос диагностики"
+              variant="nav"
+            >
               <p className="mb-4 text-sm text-[var(--muted)]">
                 Выберите новую дату. Перед сохранением появится подтверждение переноса.
               </p>
@@ -156,12 +164,17 @@ function BookingItem({
       {isCancelConfirmOpen ? (
         <ConfirmDialog
           action={cancelBookingAction}
-          description="После отмены запись переместится в историю, а время снова станет доступным."
+          description="Вы всегда можете перенести встречу на удобное время"
           eyebrow="Отмена записи"
           hiddenFields={[{ name: "bookingId", value: booking.id }]}
+          onPrimaryClick={() => {
+            setIsCancelConfirmOpen(false);
+            setIsRescheduleOpen(true);
+          }}
           onSecondary={() => setIsCancelConfirmOpen(false)}
-          primaryLabel="Отменить запись"
-          secondaryLabel="Оставить запись"
+          primaryLabel="Перенести запись"
+          secondaryLabel="Отменить запись"
+          secondarySubmits
           title="Отменить эту запись?"
         >
           <div className="grid gap-3 text-sm">
