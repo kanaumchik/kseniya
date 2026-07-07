@@ -18,9 +18,13 @@ type BookingWithUser = {
   id: string;
   startsAt: Date;
   endsAt: Date;
+  type: string;
+  diagnosticNumber: number | null;
   user: {
+    id: string;
     name: string;
     email: string;
+    phone: string | null;
   };
 };
 
@@ -34,8 +38,12 @@ export type Slot = {
   isBlocked: boolean;
   isDayOff: boolean;
   bookingId?: string;
+  bookingType?: string;
+  diagnosticNumber?: number | null;
+  bookedUserId?: string;
   bookedBy?: string;
   bookedByEmail?: string;
+  bookedByPhone?: string | null;
 };
 
 export async function getSlotsForMonth(year: number, month: number, options: { admin?: boolean } = {}) {
@@ -65,6 +73,12 @@ export async function getClientSlots() {
 }
 
 export async function isGeneratedSlot(startsAt: Date, endsAt: Date, options: { admin?: boolean } = {}) {
+  const customSlot = await prisma.customSlot.findUnique({ where: { startsAt } });
+
+  if (customSlot && customSlot.endsAt.toISOString() === endsAt.toISOString()) {
+    return true;
+  }
+
   const dateKey = formatDateKey(startsAt, psychologistTimeZone);
   const durationMinutes = options.admin ? adminSlotDurationMinutes : await getSlotDurationForDateKey(dateKey);
   const slots = buildSlotsForDateKey(dateKey, durationMinutes, [], new Set(), new Set());
@@ -166,7 +180,7 @@ async function getSlotsForDateKeys(dateKeys: string[], options: { admin?: boolea
   const firstDayStart = makeZonedDateFromKey(dateKeys[0], workdayStartHour, psychologistTimeZone);
   const lastDayEnd = makeZonedDateFromKey(dateKeys[dateKeys.length - 1], workdayEndHour, psychologistTimeZone);
 
-  const [bookings, settings, hiddenSlots, dayOffs] = await Promise.all([
+  const [bookings, settings, hiddenSlots, dayOffs, customSlots] = await Promise.all([
     prisma.booking.findMany({
       where: {
         status: "ACTIVE",
@@ -176,8 +190,10 @@ async function getSlotsForDateKeys(dateKeys: string[], options: { admin?: boolea
       include: {
         user: {
           select: {
+            id: true,
             name: true,
             email: true,
+            phone: true,
           },
         },
       },
@@ -199,13 +215,17 @@ async function getSlotsForDateKeys(dateKeys: string[], options: { admin?: boolea
       where: { dateKey: { in: dateKeys } },
       select: { dateKey: true },
     }),
+    prisma.customSlot.findMany({
+      where: { dateKey: { in: dateKeys } },
+      select: { id: true, startsAt: true, endsAt: true, dateKey: true },
+    }),
   ]);
 
   const settingsByDate = new Map(settings.map((setting) => [setting.dateKey, setting.slotDurationMinutes]));
   const hiddenSlotStarts = new Set(hiddenSlots.map((slot) => slot.startsAt.toISOString()));
   const dayOffDateKeys = new Set(dayOffs.map((dayOff) => dayOff.dateKey));
 
-  return dateKeys.flatMap((dateKey) =>
+  const generatedSlots = dateKeys.flatMap((dateKey) =>
     buildSlotsForDateKey(
       dateKey,
       options.admin ? adminSlotDurationMinutes : (settingsByDate.get(dateKey) ?? defaultSlotDurationMinutes),
@@ -214,6 +234,41 @@ async function getSlotsForDateKeys(dateKeys: string[], options: { admin?: boolea
       dayOffDateKeys,
     ),
   );
+  const generatedStarts = new Set(generatedSlots.map((slot) => slot.startsAt));
+  const customVisibleSlots = customSlots
+    .filter((slot) => !generatedStarts.has(slot.startsAt.toISOString()))
+    .map((slot) => buildCustomSlot(slot, bookings, hiddenSlotStarts, dayOffDateKeys));
+
+  return [...generatedSlots, ...customVisibleSlots].sort((first, second) => first.startsAt.localeCompare(second.startsAt));
+}
+
+function buildCustomSlot(
+  customSlot: { id: string; startsAt: Date; endsAt: Date; dateKey: string },
+  bookings: BookingWithUser[],
+  hiddenSlotStarts: Set<string>,
+  dayOffDateKeys: Set<string>,
+) {
+  const booking = bookings.find((candidate) => customSlot.startsAt < candidate.endsAt && customSlot.endsAt > candidate.startsAt);
+  const isBlocked = hiddenSlotStarts.has(customSlot.startsAt.toISOString());
+  const durationMinutes = Math.round((customSlot.endsAt.getTime() - customSlot.startsAt.getTime()) / 60000);
+
+  return {
+    id: customSlot.id,
+    dateKey: customSlot.dateKey,
+    startsAt: customSlot.startsAt.toISOString(),
+    endsAt: customSlot.endsAt.toISOString(),
+    durationMinutes,
+    isBooked: Boolean(booking),
+    isBlocked,
+    isDayOff: dayOffDateKeys.has(customSlot.dateKey),
+    bookingId: booking?.id,
+    bookingType: booking?.type,
+    diagnosticNumber: booking?.diagnosticNumber,
+    bookedUserId: booking?.user.id,
+    bookedBy: booking ? `${booking.user.name} (${booking.user.email})` : undefined,
+    bookedByEmail: booking?.user.email,
+    bookedByPhone: booking?.user.phone,
+  };
 }
 
 function buildSlotsForDateKey(
@@ -247,8 +302,12 @@ function buildSlotsForDateKey(
       isBlocked,
       isDayOff,
       bookingId: booking?.id,
+      bookingType: booking?.type,
+      diagnosticNumber: booking?.diagnosticNumber,
+      bookedUserId: booking?.user.id,
       bookedBy: booking ? `${booking.user.name} (${booking.user.email})` : undefined,
       bookedByEmail: booking?.user.email,
+      bookedByPhone: booking?.user.phone,
     });
   }
 

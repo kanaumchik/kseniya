@@ -9,6 +9,7 @@ type UserOption = {
   id: string;
   name: string;
   email: string;
+  phone?: string;
 };
 
 type BookingCalendarProps = {
@@ -17,7 +18,9 @@ type BookingCalendarProps = {
   timeZone: string;
   users?: UserOption[];
   currentUser?: UserOption;
+  bookingType?: "DIAGNOSTIC" | "SESSION";
   rescheduleBookingId?: string;
+  rescheduleFromLabel?: string;
   submitLabel?: string;
 };
 
@@ -27,12 +30,15 @@ export function BookingCalendar({
   timeZone,
   users = [],
   currentUser,
+  bookingType = "DIAGNOSTIC",
   rescheduleBookingId,
+  rescheduleFromLabel,
   submitLabel = rescheduleBookingId ? "Перенести" : "Выбрать",
 }: BookingCalendarProps) {
   const [selectedTimeZone, setSelectedTimeZone] = useState(timeZone);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedUserId, setSelectedUserId] = useState(currentUser?.id ?? users[0]?.id ?? "");
+  const [pendingSlot, setPendingSlot] = useState<Slot | null>(null);
   const availableSlots = useMemo(
     () => slots.filter((slot) => !slot.isBooked && !slot.isBlocked && !slot.isDayOff),
     [slots],
@@ -53,15 +59,12 @@ export function BookingCalendar({
       return true;
     });
   }, [currentUser, users]);
+  const selectedUser = userOptions.find((user) => user.id === selectedUserId) ?? currentUser;
+  const action = rescheduleBookingId ? rescheduleBookingAction : role === "ADMIN" ? adminCreateBookingAction : createBookingAction;
 
   return (
     <section className="space-y-5">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2 className="font-serif text-2xl text-[var(--gold-light)]">Календарь диагностики</h2>
-          <p className="mt-1 text-sm text-[var(--muted)]">Сначала выберите дату, затем время начала.</p>
-        </div>
-
+      <div className="flex flex-wrap items-end justify-end gap-3">
         <label className="grid gap-2 text-sm font-medium text-white/86">
           Часовой пояс
           <select className="field min-w-64 text-sm" value={selectedTimeZone} onChange={(event) => setSelectedTimeZone(event.target.value)}>
@@ -79,7 +82,7 @@ export function BookingCalendar({
           <div className="gold-card p-4">
             <p className="text-sm font-semibold text-white">Доступные даты</p>
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              {days.map(([date, daySlots]) => (
+              {days.map(([date]) => (
                 <button
                   className={selectedDate === date ? "calendar-date calendar-date-active" : "calendar-date"}
                   key={date}
@@ -87,7 +90,6 @@ export function BookingCalendar({
                   type="button"
                 >
                   <span>{formatDateLabel(date)}</span>
-                  <span className="text-xs text-[var(--muted)]">{daySlots.length} сл.</span>
                 </button>
               ))}
             </div>
@@ -111,17 +113,14 @@ export function BookingCalendar({
             </div>
 
             {selectedDate ? (
-              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              <div className="mt-3 grid gap-2">
                 {currentDaySlots.map((slot) => (
                   <SlotSubmitButton
-                    currentUserId={currentUser?.id}
                     key={slot.id}
-                    role={role}
+                    onSelect={() => setPendingSlot(slot)}
                     selectedTimeZone={selectedTimeZone}
-                    selectedUserId={selectedUserId}
                     slot={slot}
                     submitLabel={submitLabel}
-                    rescheduleBookingId={rescheduleBookingId}
                   />
                 ))}
               </div>
@@ -135,42 +134,79 @@ export function BookingCalendar({
       ) : (
         <div className="gold-card p-5 text-sm text-[var(--muted)]">Свободных дат сейчас нет.</div>
       )}
+
+      {pendingSlot ? (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 px-4 backdrop-blur-sm" role="dialog" aria-modal="true">
+          <div className="w-full max-w-md rounded-md border border-[var(--line)] bg-[var(--surface)] p-5 shadow-2xl shadow-black">
+            <p className="font-serif text-2xl text-[var(--gold-light)]">Подтвердите дату и время:</p>
+            {rescheduleBookingId && rescheduleFromLabel ? (
+              <p className="mt-3 text-base leading-7 text-white">
+                Вы уверены, что хотите изменить дату сессии с {rescheduleFromLabel} на{" "}
+                {formatDateLabel(formatSlotDateKey(pendingSlot.startsAt, selectedTimeZone))},{" "}
+                {formatTimeOnly(new Date(pendingSlot.startsAt), selectedTimeZone)}?
+              </p>
+            ) : (
+              <p className="mt-3 text-base text-white">
+                {formatDateLabel(formatSlotDateKey(pendingSlot.startsAt, selectedTimeZone))},{" "}
+                {formatTimeOnly(new Date(pendingSlot.startsAt), selectedTimeZone)}
+              </p>
+            )}
+            <p className="mt-2 text-sm text-[var(--muted)]">{bookingType === "SESSION" ? "Длительность сессии - 90 минут." : "Длительность диагностики - 50 минут."}</p>
+            {role === "ADMIN" && !rescheduleBookingId && selectedUser ? (
+              <p className="mt-2 text-sm text-[var(--muted)]">Клиент: {selectedUser.name}</p>
+            ) : null}
+            <form action={action} className="mt-5 flex flex-wrap gap-3">
+              {rescheduleBookingId ? <input name="bookingId" type="hidden" value={rescheduleBookingId} /> : null}
+              <input name="startsAt" type="hidden" value={pendingSlot.startsAt} />
+              <input name="endsAt" type="hidden" value={pendingSlot.endsAt} />
+              <input name="timeZone" type="hidden" value={selectedTimeZone} />
+              {!rescheduleBookingId ? <input name="type" type="hidden" value={bookingType} /> : null}
+              {role === "ADMIN" && !rescheduleBookingId ? <input name="userId" type="hidden" value={selectedUserId || currentUser?.id} /> : null}
+              <button className="primary-button px-5 py-3 text-sm" type="submit">
+                Подтвердить
+              </button>
+              <button className="secondary-button px-5 py-3 text-sm" type="button" onClick={() => setPendingSlot(null)}>
+                Отмена
+              </button>
+            </form>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }
 
 function SlotSubmitButton({
   slot,
-  role,
+  onSelect,
   selectedTimeZone,
-  selectedUserId,
-  currentUserId,
   submitLabel,
-  rescheduleBookingId,
 }: {
   slot: Slot;
-  role: "USER" | "ADMIN";
+  onSelect: () => void;
   selectedTimeZone: string;
-  selectedUserId: string;
-  currentUserId: string | undefined;
   submitLabel: string;
-  rescheduleBookingId?: string;
 }) {
-  const action = rescheduleBookingId ? rescheduleBookingAction : role === "ADMIN" ? adminCreateBookingAction : createBookingAction;
-
   return (
-    <form action={action}>
-      {rescheduleBookingId ? <input name="bookingId" type="hidden" value={rescheduleBookingId} /> : null}
-      <input name="startsAt" type="hidden" value={slot.startsAt} />
-      <input name="endsAt" type="hidden" value={slot.endsAt} />
-      <input name="timeZone" type="hidden" value={selectedTimeZone} />
-      {role === "ADMIN" && !rescheduleBookingId ? <input name="userId" type="hidden" value={selectedUserId || currentUserId} /> : null}
-      <button className="secondary-button flex w-full items-center justify-between px-3 py-2 text-sm" type="submit">
-        <span>{formatTimeOnly(new Date(slot.startsAt), selectedTimeZone)}</span>
-        <span className="text-[var(--gold-light)]">{submitLabel}</span>
-      </button>
-    </form>
+    <button className="secondary-button flex w-full items-center justify-between px-3 py-2 text-sm" type="button" onClick={onSelect}>
+      <span>{formatTimeOnly(new Date(slot.startsAt), selectedTimeZone)}</span>
+      <span className="text-[var(--gold-light)]">{submitLabel}</span>
+    </button>
   );
+}
+
+function formatSlotDateKey(value: string, timeZone: string) {
+  const parts = new Intl.DateTimeFormat("ru-RU", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone,
+    year: "numeric",
+  }).formatToParts(new Date(value));
+  const day = parts.find((part) => part.type === "day")?.value ?? "01";
+  const month = parts.find((part) => part.type === "month")?.value ?? "01";
+  const year = parts.find((part) => part.type === "year")?.value ?? "1970";
+
+  return `${year}-${month}-${day}`;
 }
 
 function formatDateLabel(date: string) {

@@ -13,6 +13,7 @@ export default async function Home() {
   const slots = session?.user ? await getClientSlots() : [];
   const users = isAdmin
     ? await prisma.user.findMany({
+        where: { role: "USER" },
         select: {
           id: true,
           name: true,

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { SignOutButton } from "@/components/SignOutButton";
 
 type ProfileMenuProps = {
   name: string | null | undefined;
@@ -45,22 +46,37 @@ export function ProfileMenu({ name, role }: ProfileMenuProps) {
             />
           </svg>
         </span>
-        <span className="text-sm font-semibold text-[var(--gold-light)]">Профиль</span>
+        <span className="max-w-36 truncate text-sm font-semibold text-[var(--gold-light)]">{profileLabel}</span>
       </button>
 
       {isOpen ? (
-        <div className="absolute right-0 top-full z-50 mt-2 w-44 rounded-md border border-white/[0.1] bg-[#10100f] p-2 shadow-xl shadow-black/45">
+        <div className="absolute right-0 top-full z-50 mt-2 w-52 rounded-md border border-white/[0.1] bg-[#10100f] p-2 shadow-xl shadow-black/45">
           <Link className="block rounded px-3 py-2 text-sm font-medium text-white/82 transition hover:bg-white/[0.06] hover:text-[var(--gold-light)]" href="/profile">
             Профиль
           </Link>
           {role === "ADMIN" ? (
-            <Link className="block rounded px-3 py-2 text-sm font-medium text-white/82 transition hover:bg-white/[0.06] hover:text-[var(--gold-light)]" href="/dashboard/schedule">
+            <Link className="block rounded px-3 py-2 text-sm font-medium text-white/82 transition hover:bg-white/[0.06] hover:text-[var(--gold-light)]" href="/schedule">
               Мое расписание
             </Link>
           ) : null}
-          <Link className="block rounded px-3 py-2 text-sm font-medium text-white/82 transition hover:bg-white/[0.06] hover:text-[var(--gold-light)]" href="/dashboard/bookings">
-            Мои записи
-          </Link>
+          {role === "ADMIN" ? (
+            <Link className="block rounded px-3 py-2 text-sm font-medium text-white/82 transition hover:bg-white/[0.06] hover:text-[var(--gold-light)]" href="/history">
+              История
+            </Link>
+          ) : null}
+          {role === "ADMIN" ? (
+            <Link className="block rounded px-3 py-2 text-sm font-medium text-white/82 transition hover:bg-white/[0.06] hover:text-[var(--gold-light)]" href="/clients">
+              Мои клиенты
+            </Link>
+          ) : null}
+          {role === "USER" ? (
+            <Link className="block rounded px-3 py-2 text-sm font-medium text-white/82 transition hover:bg-white/[0.06] hover:text-[var(--gold-light)]" href="/bookings">
+              Мои записи
+            </Link>
+          ) : null}
+          <div className="mt-2 border-t border-white/[0.08] pt-2">
+            <SignOutButton className="block w-full rounded px-3 py-2 text-left text-sm font-medium text-white/82 transition hover:bg-white/[0.06] hover:text-[var(--gold-light)]" />
+          </div>
         </div>
       ) : null}
     </div>
@@ -71,7 +87,7 @@ function formatProfileName(name: string | null | undefined) {
   const parts = (name ?? "").trim().split(/\s+/).filter(Boolean);
 
   if (parts.length >= 2) {
-    return `${parts[1]} ${parts[0].slice(0, 1)}.`;
+    return `${parts[0]} ${parts[1].slice(0, 1)}.`;
   }
 
   return parts[0] ?? "Профиль";

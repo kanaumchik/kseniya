@@ -46,8 +46,8 @@ export function BookingModal({ buttonLabel, title, children, variant = "primary"
                 <p className="text-xs uppercase tracking-[0.28em] text-[var(--gold)]">Диагностика</p>
                 <h2 className="mt-2 font-serif text-3xl text-[var(--gold-light)]">{title}</h2>
               </div>
-              <button className="secondary-button px-3 py-2 text-sm" onClick={() => setIsOpen(false)} type="button" aria-label="Закрыть">
-                Закрыть
+              <button className="icon-button" onClick={() => setIsOpen(false)} type="button" aria-label="Закрыть">
+                ×
               </button>
             </div>
             {children}

@@ -8,36 +8,58 @@ datasource db {
 }
 
 model User {
-  id           String    @id @default(cuid())
-  email        String    @unique
+  id           String         @id @default(cuid())
+  publicId     Int?
+  email        String         @unique
   name         String
   passwordHash String
-  role         String    @default("USER")
+  role         String         @default("USER")
   timeZone     String
   gender       String?
   birthDate    String?
   city         String?
   phone        String?
   photoPath    String?
-  createdAt    DateTime  @default(now())
+  source       String?
+  createdAt    DateTime       @default(now())
   bookings     Booking[]
+  courses      ClientCourse[]
+
+  @@index([publicId])
 }
 
 model Booking {
-  id              String   @id @default(cuid())
-  userId          String
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  startsAt        DateTime
-  endsAt          DateTime
-  clientTimeZone  String
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  status          String   @default("ACTIVE")
-  cancelledAt     DateTime?
+  id               String    @id @default(cuid())
+  userId           String
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  startsAt         DateTime
+  endsAt           DateTime
+  clientTimeZone   String
+  type             String    @default("DIAGNOSTIC")
+  diagnosticNumber Int?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  status           String    @default("ACTIVE")
+  cancelledAt      DateTime?
+  rescheduledAt    DateTime?
 
   @@index([startsAt])
   @@index([startsAt, endsAt])
   @@index([status, startsAt])
+  @@index([type, startsAt])
+  @@index([diagnosticNumber])
+}
+
+model ClientCourse {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  remaining Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 model DaySchedule {
@@ -51,6 +73,16 @@ model DaySchedule {
 model HiddenSlot {
   id        String   @id @default(cuid())
   startsAt  DateTime @unique
+  dateKey   String
+  createdAt DateTime @default(now())
+
+  @@index([dateKey])
+}
+
+model CustomSlot {
+  id        String   @id @default(cuid())
+  startsAt  DateTime @unique
+  endsAt    DateTime
   dateKey   String
   createdAt DateTime @default(now())
 

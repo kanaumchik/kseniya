@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { AuthError } from "next-auth";
 import { auth, signIn, signOut } from "@/auth";
-import { hashPassword } from "@/lib/password";
+import { hashPassword, verifyPassword } from "@/lib/password";
 import { prisma } from "@/lib/prisma";
 import {
   allowedSlotDurations,
@@ -14,14 +14,14 @@ import {
   isGeneratedSlot,
   isWithinUserBookingWindow,
 } from "@/lib/slots";
-import { formatDateKey, getTimeZoneForCity, psychologistTimeZone, supportedTimeZones } from "@/lib/time";
+import { addMinutes, formatDateKey, getTimeZoneForCity, makeZonedDateFromKey, psychologistTimeZone, supportedTimeZones } from "@/lib/time";
 
 export async function loginAction(_previousState: string | undefined, formData: FormData) {
   try {
     await signIn("credentials", {
       email: formData.get("email"),
       password: formData.get("password"),
-      redirectTo: "/dashboard",
+      redirectTo: "/",
     });
   } catch (error) {
     if (error instanceof AuthError) {
@@ -37,18 +37,20 @@ export async function logoutAction() {
 }
 
 export async function registerAction(_previousState: string | undefined, formData: FormData) {
-  const name = String(formData.get("name") ?? "").trim();
+  const firstName = String(formData.get("firstName") ?? "").trim();
+  const lastName = String(formData.get("lastName") ?? "").trim();
+  const name = [firstName, lastName].filter(Boolean).join(" ");
   const gender = String(formData.get("gender") ?? "");
   const birthDate = String(formData.get("birthDate") ?? "").trim();
   const city = String(formData.get("city") ?? "").trim();
-  const phone = String(formData.get("phone") ?? "").trim();
+  const phone = normalizePhone(formData);
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
   const passwordRepeat = String(formData.get("passwordRepeat") ?? "");
   const consent = String(formData.get("consent") ?? "");
   const timeZone = getTimeZoneForCity(city);
 
-  if (!name || !gender || !birthDate || !city || !phone || !email || !password || !passwordRepeat) {
+  if (!firstName || !lastName || !gender || !birthDate || !city || !phone || !email || !password || !passwordRepeat) {
     return "Заполните все поля регистрации.";
   }
 
@@ -60,8 +62,8 @@ export async function registerAction(_previousState: string | undefined, formDat
     return "Укажите дату рождения в формате ДД.ММ.ГГГГ.";
   }
 
-  if (!/^\+7\(\d{3}\)-\d{3}-\d{2}-\d{2}$/.test(phone)) {
-    return "Укажите телефон в формате +7(ХХХ)-ХХХ-ХХ-ХХ.";
+  if (!isValidPhone(phone)) {
+    return "Укажите телефон в формате +7 (ХХХ)-ХХХ-ХХ-ХХ.";
   }
 
   if (!email.includes("@")) {
@@ -88,6 +90,7 @@ export async function registerAction(_previousState: string | undefined, formDat
 
   await prisma.user.create({
     data: {
+      publicId: await getNextPublicId(),
       email,
       name,
       gender,
@@ -103,7 +106,7 @@ export async function registerAction(_previousState: string | undefined, formDat
     await signIn("credentials", {
       email,
       password,
-      redirectTo: "/dashboard",
+      redirectTo: "/",
     });
   } catch (error) {
     if (error instanceof AuthError) {
@@ -117,8 +120,15 @@ export async function registerAction(_previousState: string | undefined, formDat
 export async function createBookingAction(formData: FormData) {
   const session = await requireSession();
 
-  const { startsAt, endsAt } = parseSlotDates(formData);
-  await ensureUserSlotCanBeBooked(startsAt, endsAt);
+  if (session.user.role === "ADMIN") {
+    throw new Error("Записаться на диагностику может только клиент.");
+  }
+
+  const bookingType = normalizeBookingType(String(formData.get("type") ?? "DIAGNOSTIC"));
+  const selectedSlot = parseSlotDates(formData);
+  await ensureUserSlotCanBeBooked(selectedSlot.startsAt, selectedSlot.endsAt);
+  const startsAt = selectedSlot.startsAt;
+  const endsAt = getBookingEnd(startsAt, bookingType);
   const clientTimeZone = normalizeTimeZone(String(formData.get("timeZone") ?? session.user.timeZone));
 
   await prisma.booking.create({
@@ -127,11 +137,14 @@ export async function createBookingAction(formData: FormData) {
       startsAt,
       endsAt,
       clientTimeZone,
+      type: bookingType,
+      ...(bookingType === "DIAGNOSTIC" ? { diagnosticNumber: await getNextDiagnosticNumber() } : {}),
       status: "ACTIVE",
     },
   });
 
   revalidateDashboard();
+  redirect("/bookings");
 }
 
 export async function adminCreateBookingAction(formData: FormData) {
@@ -139,13 +152,25 @@ export async function adminCreateBookingAction(formData: FormData) {
   assertAdmin(session.user.role);
 
   const userId = String(formData.get("userId") ?? "");
-  const { startsAt, endsAt } = parseSlotDates(formData);
+  const bookingType = normalizeBookingType(String(formData.get("type") ?? "DIAGNOSTIC"));
+  const selectedSlot = parseSlotDates(formData);
+  const startsAt = selectedSlot.startsAt;
+  const endsAt = getBookingEnd(startsAt, bookingType);
+
+  if (userId === session.user.id) {
+    throw new Error("Администратор не может записать сам себя.");
+  }
 
   if (startsAt < new Date()) {
     throw new Error("Нельзя записывать пользователя на прошедшее время.");
   }
 
-  await ensureSlotCanBeBooked(startsAt, endsAt, undefined, { admin: true });
+  await ensureSlotCanBeBooked(selectedSlot.startsAt, selectedSlot.endsAt, undefined, { admin: true });
+  const fullDurationConflict = await getActiveSlotConflict(startsAt, endsAt);
+
+  if (fullDurationConflict) {
+    throw new Error("На выбранное время уже есть запись.");
+  }
 
   const user = await prisma.user.findFirst({
     where: {
@@ -167,6 +192,8 @@ export async function adminCreateBookingAction(formData: FormData) {
       startsAt,
       endsAt,
       clientTimeZone: user.timeZone,
+      type: bookingType,
+      ...(bookingType === "DIAGNOSTIC" ? { diagnosticNumber: await getNextDiagnosticNumber() } : {}),
       status: "ACTIVE",
     },
   });
@@ -209,7 +236,7 @@ export async function rescheduleBookingAction(formData: FormData) {
   const session = await requireSession();
 
   const bookingId = String(formData.get("bookingId") ?? "");
-  const { startsAt, endsAt } = parseSlotDates(formData);
+  const selectedSlot = parseSlotDates(formData);
   const clientTimeZone = normalizeTimeZone(String(formData.get("timeZone") ?? session.user.timeZone));
 
   const booking = await prisma.booking.findFirst({
@@ -224,14 +251,24 @@ export async function rescheduleBookingAction(formData: FormData) {
     throw new Error("Активная запись для переноса не найдена.");
   }
 
+  const bookingType = normalizeBookingType(booking.type);
+  const startsAt = selectedSlot.startsAt;
+  const endsAt = getBookingEnd(startsAt, bookingType);
+
   if (booking.startsAt <= new Date()) {
     throw new Error("Прошедшую или уже начавшуюся диагностику нельзя перенести.");
   }
 
   if (session.user.role === "ADMIN") {
-    await ensureSlotCanBeBooked(startsAt, endsAt, booking.id, { admin: true });
+    await ensureSlotCanBeBooked(selectedSlot.startsAt, selectedSlot.endsAt, booking.id, { admin: true });
   } else {
-    await ensureUserSlotCanBeBooked(startsAt, endsAt, booking.id);
+    await ensureUserSlotCanBeBooked(selectedSlot.startsAt, selectedSlot.endsAt, booking.id);
+  }
+
+  const fullDurationConflict = await getActiveSlotConflict(startsAt, endsAt, booking.id);
+
+  if (fullDurationConflict) {
+    throw new Error("На выбранное время уже есть запись.");
   }
 
   await prisma.booking.update({
@@ -240,6 +277,7 @@ export async function rescheduleBookingAction(formData: FormData) {
       startsAt,
       endsAt,
       clientTimeZone,
+      rescheduledAt: new Date(),
     },
   });
 
@@ -248,18 +286,21 @@ export async function rescheduleBookingAction(formData: FormData) {
 
 export async function updateProfileAction(_previousState: string | undefined, formData: FormData) {
   const session = await requireSession();
-  const name = String(formData.get("name") ?? "").trim();
+  const firstName = String(formData.get("firstName") ?? "").trim();
+  const lastName = String(formData.get("lastName") ?? "").trim();
+  const name = [firstName, lastName].filter(Boolean).join(" ");
   const gender = String(formData.get("gender") ?? "");
   const birthDate = String(formData.get("birthDate") ?? "").trim();
   const city = String(formData.get("city") ?? "").trim();
-  const phone = String(formData.get("phone") ?? "").trim();
+  const phone = normalizePhone(formData);
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const timeZone = normalizeTimeZone(String(formData.get("timeZone") ?? getTimeZoneForCity(city)));
+  const currentPassword = String(formData.get("currentPassword") ?? "");
   const password = String(formData.get("password") ?? "");
   const passwordRepeat = String(formData.get("passwordRepeat") ?? "");
   const photo = formData.get("photo");
 
-  if (!name || !gender || !birthDate || !city || !phone || !email) {
+  if (!firstName || !lastName || !gender || !birthDate || !city || !phone || !email) {
     return "Заполните все обязательные поля.";
   }
 
@@ -271,8 +312,8 @@ export async function updateProfileAction(_previousState: string | undefined, fo
     return "Укажите дату рождения в формате ДД.ММ.ГГГГ.";
   }
 
-  if (!/^\+7\(\d{3}\)-\d{3}-\d{2}-\d{2}$/.test(phone)) {
-    return "Укажите телефон в формате +7(ХХХ)-ХХХ-ХХ-ХХ.";
+  if (!isValidPhone(phone)) {
+    return "Укажите телефон в формате +7 (ХХХ)-ХХХ-ХХ-ХХ.";
   }
 
   if (!email.includes("@")) {
@@ -281,6 +322,21 @@ export async function updateProfileAction(_previousState: string | undefined, fo
 
   if ((password || passwordRepeat) && (password.length < 6 || password !== passwordRepeat)) {
     return "Новый пароль должен быть не короче 6 символов, оба значения должны совпадать.";
+  }
+
+  if (password || passwordRepeat) {
+    if (!currentPassword) {
+      return "Укажите текущий пароль.";
+    }
+
+    const currentUser = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { passwordHash: true },
+    });
+
+    if (!currentUser || !(await verifyPassword(currentPassword, currentUser.passwordHash))) {
+      return "Текущий пароль указан неверно.";
+    }
   }
 
   const existingUser = await prisma.user.findFirst({
@@ -335,6 +391,47 @@ export async function hideSlotAction(formData: FormData) {
   revalidatePath("/dashboard/schedule");
 }
 
+export async function createCustomSlotAction(formData: FormData) {
+  const session = await requireSession();
+  assertAdmin(session.user.role);
+
+  const dateKey = String(formData.get("dateKey") ?? "");
+  const time = String(formData.get("time") ?? "");
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey) || !/^\d{2}:\d{2}$/.test(time)) {
+    throw new Error("Укажите дату и время нового слота.");
+  }
+
+  const [hour, minute] = time.split(":").map(Number);
+  const startsAt = makeZonedDateFromKey(dateKey, hour, psychologistTimeZone, minute);
+  const endsAt = addMinutes(startsAt, 60);
+
+  if (startsAt <= new Date()) {
+    throw new Error("Нельзя создать слот в прошлом.");
+  }
+
+  const dayOff = await prisma.dayOff.findUnique({ where: { dateKey } });
+
+  if (dayOff) {
+    throw new Error("На выбранный день назначен day off.");
+  }
+
+  const conflict = await getActiveSlotConflict(startsAt, endsAt);
+
+  if (conflict) {
+    throw new Error("На выбранное время уже есть запись.");
+  }
+
+  await prisma.customSlot.upsert({
+    where: { startsAt },
+    update: { endsAt, dateKey },
+    create: { startsAt, endsAt, dateKey },
+  });
+
+  revalidateDashboard();
+  revalidatePath("/schedule");
+}
+
 export async function restoreSlotAction(formData: FormData) {
   const session = await requireSession();
   assertAdmin(session.user.role);
@@ -351,6 +448,12 @@ export async function createDayOffAction(formData: FormData) {
   assertAdmin(session.user.role);
   const dateKeys = formData.getAll("dateKeys").map(String).filter((dateKey) => /^\d{4}-\d{2}-\d{2}$/.test(dateKey));
 
+  const conflictDateKeys = await getDayOffConflictDateKeys(dateKeys);
+
+  if (conflictDateKeys.length > 0) {
+    redirect(`/schedule?notice=${encodeURIComponent(`Day off не назначен: на ${conflictDateKeys.join(", ")} уже есть запись.`)}`);
+  }
+
   await Promise.all(
     dateKeys.map((dateKey) =>
       prisma.dayOff.upsert({
@@ -363,6 +466,7 @@ export async function createDayOffAction(formData: FormData) {
 
   revalidateDashboard();
   revalidatePath("/dashboard/schedule");
+  revalidatePath("/schedule");
 }
 
 export async function cancelDayOffAction(formData: FormData) {
@@ -374,6 +478,33 @@ export async function cancelDayOffAction(formData: FormData) {
 
   revalidateDashboard();
   revalidatePath("/dashboard/schedule");
+  revalidatePath("/schedule");
+}
+
+export async function updateDayOffAction(formData: FormData) {
+  const session = await requireSession();
+  assertAdmin(session.user.role);
+  const dayOffId = String(formData.get("dayOffId") ?? "");
+  const dateKey = String(formData.get("dateKey") ?? "");
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) {
+    throw new Error("Укажите новую дату day off.");
+  }
+
+  const conflictDateKeys = await getDayOffConflictDateKeys([dateKey]);
+
+  if (conflictDateKeys.length > 0) {
+    redirect(`/schedule?notice=${encodeURIComponent(`Day off не изменен: на ${conflictDateKeys.join(", ")} уже есть запись.`)}`);
+  }
+
+  await prisma.dayOff.update({
+    where: { id: dayOffId },
+    data: { dateKey },
+  });
+
+  revalidateDashboard();
+  revalidatePath("/dashboard/schedule");
+  revalidatePath("/schedule");
 }
 
 export async function updateDayDurationAction(formData: FormData) {
@@ -471,6 +602,10 @@ function revalidateDashboard() {
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/bookings");
   revalidatePath("/dashboard/schedule");
+  revalidatePath("/bookings");
+  revalidatePath("/schedule");
+  revalidatePath("/history");
+  revalidatePath("/clients");
 }
 
 function isValidBirthDate(value: string) {
@@ -484,6 +619,69 @@ function isValidBirthDate(value: string) {
   const date = new Date(year, month - 1, day);
 
   return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
+}
+
+function normalizePhone(formData: FormData) {
+  const prefix = String(formData.get("phonePrefix") ?? "+7").trim();
+  const local = String(formData.get("phone") ?? "").trim();
+
+  return `${prefix}${local}`;
+}
+
+function isValidPhone(value: string) {
+  return /^\+(7|375|380|996)\(\d{3}\)-\d{3}-\d{2}-\d{2}$/.test(value);
+}
+
+async function getNextPublicId() {
+  const lastUser = await prisma.user.findFirst({
+    orderBy: { publicId: "desc" },
+    select: { publicId: true },
+    where: { publicId: { not: null } },
+  });
+
+  return Math.max(lastUser?.publicId ?? 2, 2) + 1;
+}
+
+async function getNextDiagnosticNumber() {
+  const lastDiagnostic = await prisma.booking.findFirst({
+    orderBy: { diagnosticNumber: "desc" },
+    select: { diagnosticNumber: true },
+    where: { diagnosticNumber: { not: null } },
+  });
+
+  return (lastDiagnostic?.diagnosticNumber ?? 0) + 1;
+}
+
+function normalizeBookingType(value: string) {
+  return value === "SESSION" ? "SESSION" : "DIAGNOSTIC";
+}
+
+function getBookingEnd(startsAt: Date, type: string) {
+  return addMinutes(startsAt, type === "SESSION" ? 90 : 50);
+}
+
+async function getDayOffConflictDateKeys(dateKeys: string[]) {
+  const uniqueDateKeys = Array.from(new Set(dateKeys.filter((dateKey) => /^\d{4}-\d{2}-\d{2}$/.test(dateKey))));
+  const conflicts: string[] = [];
+
+  for (const dateKey of uniqueDateKeys) {
+    const dayStart = makeZonedDateFromKey(dateKey, 0, psychologistTimeZone);
+    const nextDayStart = addMinutes(dayStart, 24 * 60);
+    const booking = await prisma.booking.findFirst({
+      where: {
+        status: "ACTIVE",
+        startsAt: { lt: nextDayStart },
+        endsAt: { gt: dayStart },
+      },
+      select: { id: true },
+    });
+
+    if (booking) {
+      conflicts.push(dateKey);
+    }
+  }
+
+  return conflicts;
 }
 
 function normalizeTimeZone(value: string) {
