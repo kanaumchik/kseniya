@@ -7,10 +7,12 @@ type BookingModalProps = {
   title: string;
   children: ReactNode;
   variant?: "primary" | "nav";
+  buttonClassName?: string;
 };
 
-export function BookingModal({ buttonLabel, title, children, variant = "primary" }: BookingModalProps) {
+export function BookingModal({ buttonLabel, title, children, variant = "primary", buttonClassName }: BookingModalProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const triggerClassName = [variant === "nav" ? "nav-gold-button" : "hero-gold-button", buttonClassName].filter(Boolean).join(" ");
 
   useEffect(() => {
     if (!isOpen) {
@@ -34,7 +36,7 @@ export function BookingModal({ buttonLabel, title, children, variant = "primary"
 
   return (
     <>
-      <button className={variant === "nav" ? "nav-gold-button" : "hero-gold-button"} onClick={() => setIsOpen(true)} type="button">
+      <button className={triggerClassName} onClick={() => setIsOpen(true)} type="button">
         {buttonLabel}
       </button>
 

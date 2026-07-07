@@ -282,6 +282,10 @@ export async function rescheduleBookingAction(formData: FormData) {
   });
 
   revalidateDashboard();
+
+  if (session.user.role !== "ADMIN") {
+    redirect("/bookings");
+  }
 }
 
 export async function updateProfileAction(_previousState: string | undefined, formData: FormData) {

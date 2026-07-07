@@ -27,7 +27,7 @@ type DashboardHomeProps = {
 
 const navItems = [
   { href: "#project", label: "О проекте" },
-  { href: "#sessions", label: "Индивидуальные сессии и сопровождение" },
+  { href: "#sessions", label: "Сессии и сопровождение" },
   { href: "#about", label: "Обо мне" },
   { href: "#faq", label: "FAQ" },
   { href: "#diagnostic", label: "Диагностика" },
@@ -163,7 +163,7 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
 
       <section className="section-shell grid gap-10" id="sessions">
         <div className="max-w-4xl">
-          <h2 className="font-serif text-3xl text-[var(--gold-light)] sm:text-4xl">Сессии и сопровождение</h2>
+          <h2 className="font-serif text-3xl text-[var(--gold-light)] sm:text-4xl">Индивидуальные сессии и сопровождение</h2>
         </div>
 
         <div className="grid gap-4 lg:grid-cols-2">

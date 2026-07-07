@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { adminCreateBookingAction, createBookingAction, rescheduleBookingAction } from "@/app/actions";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { type Slot, groupSlotsByDate } from "@/lib/slots";
 import { formatTimeOnly, supportedTimeZones } from "@/lib/time";
 
@@ -61,6 +62,11 @@ export function BookingCalendar({
   }, [currentUser, users]);
   const selectedUser = userOptions.find((user) => user.id === selectedUserId) ?? currentUser;
   const action = rescheduleBookingId ? rescheduleBookingAction : role === "ADMIN" ? adminCreateBookingAction : createBookingAction;
+  const pendingDateKey = pendingSlot ? formatSlotDateKey(pendingSlot.startsAt, selectedTimeZone) : "";
+  const pendingDateLabel = pendingDateKey ? formatDateLabel(pendingDateKey) : "";
+  const pendingTimeLabel = pendingSlot ? formatTimeOnly(new Date(pendingSlot.startsAt), selectedTimeZone) : "";
+  const durationLabel = bookingType === "SESSION" ? "90 минут" : "50 минут";
+  const appointmentTypeLabel = bookingType === "SESSION" ? "Сессия" : "Диагностика";
 
   return (
     <section className="space-y-5">
@@ -136,41 +142,60 @@ export function BookingCalendar({
       )}
 
       {pendingSlot ? (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 px-4 backdrop-blur-sm" role="dialog" aria-modal="true">
-          <div className="w-full max-w-md rounded-md border border-[var(--line)] bg-[var(--surface)] p-5 shadow-2xl shadow-black">
-            <p className="font-serif text-2xl text-[var(--gold-light)]">Подтвердите дату и время:</p>
+        <ConfirmDialog
+          action={action}
+          eyebrow={rescheduleBookingId ? "Перенос записи" : "Новая запись"}
+          hiddenFields={[
+            ...(rescheduleBookingId ? [{ name: "bookingId", value: rescheduleBookingId }] : []),
+            { name: "startsAt", value: pendingSlot.startsAt },
+            { name: "endsAt", value: pendingSlot.endsAt },
+            { name: "timeZone", value: selectedTimeZone },
+            ...(!rescheduleBookingId ? [{ name: "type", value: bookingType }] : []),
+            ...(role === "ADMIN" && !rescheduleBookingId ? [{ name: "userId", value: selectedUserId || currentUser?.id }] : []),
+          ]}
+          onSecondary={() => setPendingSlot(null)}
+          primaryLabel={rescheduleBookingId ? "Перенести запись" : "Подтвердить запись"}
+          secondaryLabel="Вернуться к выбору"
+          title={rescheduleBookingId ? "Подтвердите перенос" : "Подтвердите дату и время"}
+        >
+          <div className="grid gap-4">
             {rescheduleBookingId && rescheduleFromLabel ? (
-              <p className="mt-3 text-base leading-7 text-white">
-                Вы уверены, что хотите изменить дату сессии с {rescheduleFromLabel} на{" "}
-                {formatDateLabel(formatSlotDateKey(pendingSlot.startsAt, selectedTimeZone))},{" "}
-                {formatTimeOnly(new Date(pendingSlot.startsAt), selectedTimeZone)}?
-              </p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">Сейчас</p>
+                  <p className="mt-1 text-sm leading-6 text-white/86">{rescheduleFromLabel}</p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">Новое время</p>
+                  <p className="mt-1 text-lg font-semibold text-white">
+                    {pendingDateLabel}, {pendingTimeLabel}
+                  </p>
+                </div>
+              </div>
             ) : (
-              <p className="mt-3 text-base text-white">
-                {formatDateLabel(formatSlotDateKey(pendingSlot.startsAt, selectedTimeZone))},{" "}
-                {formatTimeOnly(new Date(pendingSlot.startsAt), selectedTimeZone)}
-              </p>
+              <div>
+                <p className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">Выбранное время</p>
+                <p className="mt-1 text-xl font-semibold text-white">
+                  {pendingDateLabel}, {pendingTimeLabel}
+                </p>
+              </div>
             )}
-            <p className="mt-2 text-sm text-[var(--muted)]">{bookingType === "SESSION" ? "Длительность сессии - 90 минут." : "Длительность диагностики - 50 минут."}</p>
-            {role === "ADMIN" && !rescheduleBookingId && selectedUser ? (
-              <p className="mt-2 text-sm text-[var(--muted)]">Клиент: {selectedUser.name}</p>
-            ) : null}
-            <form action={action} className="mt-5 flex flex-wrap gap-3">
-              {rescheduleBookingId ? <input name="bookingId" type="hidden" value={rescheduleBookingId} /> : null}
-              <input name="startsAt" type="hidden" value={pendingSlot.startsAt} />
-              <input name="endsAt" type="hidden" value={pendingSlot.endsAt} />
-              <input name="timeZone" type="hidden" value={selectedTimeZone} />
-              {!rescheduleBookingId ? <input name="type" type="hidden" value={bookingType} /> : null}
-              {role === "ADMIN" && !rescheduleBookingId ? <input name="userId" type="hidden" value={selectedUserId || currentUser?.id} /> : null}
-              <button className="primary-button px-5 py-3 text-sm" type="submit">
-                Подтвердить
-              </button>
-              <button className="secondary-button px-5 py-3 text-sm" type="button" onClick={() => setPendingSlot(null)}>
-                Отмена
-              </button>
-            </form>
+
+            <div className="grid gap-2 border-t border-[var(--line)] pt-3 text-sm text-[var(--muted)] sm:grid-cols-2">
+              <p>
+                <span className="text-white/72">Формат:</span> {appointmentTypeLabel}
+              </p>
+              <p>
+                <span className="text-white/72">Длительность:</span> {durationLabel}
+              </p>
+              {role === "ADMIN" && !rescheduleBookingId && selectedUser ? (
+                <p className="sm:col-span-2">
+                  <span className="text-white/72">Клиент:</span> {selectedUser.name}
+                </p>
+              ) : null}
+            </div>
           </div>
-        </div>
+        </ConfirmDialog>
       ) : null}
     </section>
   );

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { cancelBookingAction } from "@/app/actions";
 import { BookingCalendar } from "@/components/BookingCalendar";
 import { BookingModal } from "@/components/BookingModal";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { type Slot } from "@/lib/slots";
 import { formatDateTime, formatTimeRange, supportedTimeZones } from "@/lib/time";
 
@@ -41,14 +42,17 @@ export function MyBookings({ bookings, availableSlots, timeZone, currentUser }: 
 
   return (
     <section className="mx-auto w-full max-w-6xl px-4 pt-8">
-      <div className="rounded-md border border-[var(--line)] bg-[var(--surface)] p-5">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h2 className="text-xl font-semibold text-white">Мои записи</h2>
+      <div className="rounded-md border border-[var(--line)] bg-[var(--surface)] p-5 sm:p-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="max-w-xl">
+            <h2 className="text-2xl font-semibold text-white">Мои записи</h2>
+            <p className="mt-2 text-sm text-[var(--muted)] sm:text-base">
+              Здесь собраны будущие встречи и история отмененных или прошедших записей.
+            </p>
           </div>
           <label className="grid gap-2 text-sm font-medium text-white/86">
             Часовой пояс
-            <select className="field min-w-64 text-sm" value={selectedTimeZone} onChange={(event) => setSelectedTimeZone(event.target.value)}>
+            <select className="field min-w-56 text-sm" value={selectedTimeZone} onChange={(event) => setSelectedTimeZone(event.target.value)}>
               {supportedTimeZones.map((zone) => (
                 <option key={zone.value} value={zone.value}>
                   {zone.label}
@@ -75,9 +79,14 @@ export function MyBookings({ bookings, availableSlots, timeZone, currentUser }: 
           <div className="mt-3 grid gap-2">
             {archivedBookings.length > 0 ? (
               archivedBookings.map((booking) => (
-                <div className="rounded-md border border-[var(--line)] px-3 py-2 text-sm" key={booking.id}>
-                  <p className="font-medium text-white">{formatBookingDate(booking, selectedTimeZone)}</p>
-                  <p className="text-xs text-[var(--muted)]">{booking.status === "ACTIVE" ? "Прошедшая" : "Отменена"}</p>
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-[var(--line)] px-3 py-2 text-sm" key={booking.id}>
+                  <div>
+                    <p className="font-medium text-white">{formatBookingDate(booking, selectedTimeZone)}</p>
+                    <p className="mt-1 text-xs text-[var(--muted)]">{formatBookingType(booking)}</p>
+                  </div>
+                  <p className="rounded-full border border-white/[0.08] px-2 py-1 text-xs text-[var(--muted)]">
+                    {booking.status === "ACTIVE" ? "Прошедшая" : "Отменена"}
+                  </p>
                 </div>
               ))
             ) : (
@@ -107,25 +116,22 @@ function BookingItem({
 }) {
   const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
   const startsAt = new Date(booking.startsAt);
-  const endsAt = new Date(booking.endsAt);
   const canChange = startsAt > new Date();
 
   return (
-    <article className="rounded-md border border-[var(--line)] bg-[var(--surface-strong)] px-3 py-3">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <p className="font-medium text-white">{formatDateTime(startsAt, timeZone)}</p>
-          <p className="mt-1 text-sm text-[var(--muted)]">{formatTimeRange(startsAt, endsAt, timeZone)}</p>
-          <p className="mt-1 text-xs text-[var(--gold-light)]">{formatBookingType(booking)}</p>
+    <article className="rounded-md border border-[var(--line)] bg-[linear-gradient(135deg,rgba(232,197,122,0.055),rgba(255,255,255,0.025)_42%,rgba(0,0,0,0.12))] px-4 py-4 sm:px-5">
+      <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-center">
+        <div className="min-w-0">
+          <span className="inline-flex rounded-full border border-[rgba(232,197,122,0.22)] bg-[rgba(232,197,122,0.08)] px-3 py-1 text-xs font-semibold text-[var(--gold-light)]">
+            {formatBookingType(booking)}
+          </span>
+          <p className="mt-4 text-xl font-semibold text-white">{formatDateTime(startsAt, timeZone)}</p>
+          <p className="mt-2 text-sm text-[var(--muted)]">{booking.type === "SESSION" ? "Длительность сессии - 90 минут" : "Длительность диагностики - 50 минут"}</p>
         </div>
 
         {canChange ? (
-          <div className="flex flex-wrap gap-2">
-            <button className="secondary-button w-full px-3 py-2 text-sm" type="button" onClick={() => setIsCancelConfirmOpen(true)}>
-              Отменить
-            </button>
-
-            <BookingModal buttonLabel="Перенести" title="Перенос диагностики" variant="nav">
+          <div className="grid gap-3 lg:w-80">
+            <BookingModal buttonClassName="!min-h-16 !w-full !px-6 !py-4 !text-lg" buttonLabel="Перенести" title="Перенос диагностики" variant="nav">
               <p className="mb-4 text-sm text-[var(--muted)]">
                 Выберите новую дату. Перед сохранением появится подтверждение переноса.
               </p>
@@ -136,29 +142,43 @@ function BookingItem({
                 slots={availableSlots}
                 submitLabel="Перенести"
                 timeZone={timeZone}
-                rescheduleFromLabel={formatBookingDate(booking, timeZone)}
+                rescheduleFromLabel={formatDateTime(startsAt, timeZone)}
               />
             </BookingModal>
+
+            <button className="secondary-button !min-h-12 w-full px-4 py-3 text-sm" type="button" onClick={() => setIsCancelConfirmOpen(true)}>
+              Отменить
+            </button>
           </div>
         ) : null}
       </div>
 
       {isCancelConfirmOpen ? (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 px-4 backdrop-blur-sm" role="dialog" aria-modal="true">
-          <div className="w-full max-w-md rounded-md border border-[var(--line)] bg-[var(--surface)] p-5 shadow-2xl shadow-black">
-            <p className="font-serif text-2xl text-[var(--gold-light)]">Вы уверены, что хотите отменить запись?</p>
-            <p className="mt-3 text-sm text-[var(--muted)]">{formatBookingDate(booking, timeZone)}</p>
-            <form action={cancelBookingAction} className="mt-5 flex flex-wrap gap-3">
-              <input name="bookingId" type="hidden" value={booking.id} />
-              <button className="primary-button px-5 py-3 text-sm" type="submit">
-                Да
-              </button>
-              <button className="secondary-button px-5 py-3 text-sm" type="button" onClick={() => setIsCancelConfirmOpen(false)}>
-                Нет
-              </button>
-            </form>
+        <ConfirmDialog
+          action={cancelBookingAction}
+          description="После отмены запись переместится в историю, а время снова станет доступным."
+          eyebrow="Отмена записи"
+          hiddenFields={[{ name: "bookingId", value: booking.id }]}
+          onSecondary={() => setIsCancelConfirmOpen(false)}
+          primaryLabel="Отменить запись"
+          secondaryLabel="Оставить запись"
+          title="Отменить эту запись?"
+        >
+          <div className="grid gap-3 text-sm">
+            <div>
+              <p className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">Запись</p>
+              <p className="mt-1 text-lg font-semibold text-white">{formatDateTime(startsAt, timeZone)}</p>
+            </div>
+            <div className="grid gap-2 border-t border-[var(--line)] pt-3 text-[var(--muted)] sm:grid-cols-2">
+              <p>
+                <span className="text-white/72">Формат:</span> {formatBookingType(booking)}
+              </p>
+              <p>
+                <span className="text-white/72">Длительность:</span> {booking.type === "SESSION" ? "90 минут" : "50 минут"}
+              </p>
+            </div>
           </div>
-        </div>
+        </ConfirmDialog>
       ) : null}
     </article>
   );
@@ -169,7 +189,7 @@ function formatBookingType(booking: BookingSummary) {
     return "Сессия";
   }
 
-  return booking.diagnosticNumber ? `Диагностика Д${booking.diagnosticNumber}` : "Диагностика";
+  return "Диагностика";
 }
 
 function formatBookingDate(booking: BookingSummary, timeZone: string) {

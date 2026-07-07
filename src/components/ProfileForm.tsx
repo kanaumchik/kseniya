@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useActionState, useMemo, useRef, useState } from "react";
 import { updateProfileAction } from "@/app/actions";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { supportedTimeZones } from "@/lib/time";
 
 type ProfileFormProps = {
@@ -200,27 +201,28 @@ export function ProfileForm({ user }: ProfileFormProps) {
       </form>
 
       {isConfirmOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 px-4 backdrop-blur-sm" role="dialog" aria-modal="true">
-          <div className="w-full max-w-md rounded-md border border-[var(--line)] bg-[var(--surface)] p-5 shadow-2xl shadow-black">
-            <p className="font-serif text-2xl text-[var(--gold-light)]">Вы уверены, что хотите сохранить изменения?</p>
-            <div className="mt-5 flex flex-wrap gap-3">
-              <button
-                className="primary-button px-5 py-3 text-sm"
-                form={formId}
-                type="submit"
-                disabled={isPending}
-                onClick={() => {
-                  allowSubmitRef.current = true;
-                }}
-              >
-                Да
-              </button>
-              <button className="secondary-button px-5 py-3 text-sm" type="button" onClick={() => setIsConfirmOpen(false)}>
-                Нет
-              </button>
-            </div>
+        <ConfirmDialog
+          description="Проверьте изменения перед сохранением. Пароль изменится только если заполнены поля смены пароля."
+          eyebrow="Профиль"
+          onPrimaryClick={() => {
+            allowSubmitRef.current = true;
+          }}
+          onSecondary={() => setIsConfirmOpen(false)}
+          primaryDisabled={isPending}
+          primaryForm={formId}
+          primaryLabel={isPending ? "Сохраняем..." : "Сохранить изменения"}
+          secondaryLabel="Вернуться к форме"
+          title="Сохранить изменения?"
+        >
+          <div className="grid gap-2 text-sm text-[var(--muted)]">
+            <p>
+              <span className="text-white/72">Профиль:</span> {profileTitle}
+            </p>
+            <p>
+              <span className="text-white/72">E-mail:</span> {user.email}
+            </p>
           </div>
-        </div>
+        </ConfirmDialog>
       ) : null}
     </>
   );
