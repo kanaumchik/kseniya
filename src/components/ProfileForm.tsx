@@ -9,8 +9,8 @@ import { supportedTimeZones } from "@/lib/time";
 
 type ProfileFormProps = {
   user: {
+    id: number;
     email: string;
-    publicId: number | null;
     name: string;
     gender: string | null;
     birthDate: string | null;
@@ -69,7 +69,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
             </div>
             <div className="grid gap-3">
               <h1 className="font-serif text-3xl text-[var(--gold-light)]">{profileTitle}</h1>
-              <p className="text-sm text-[var(--muted)]">ID {user.publicId ?? "будет назначен автоматически"}</p>
+              <p className="text-sm text-[var(--muted)]">ID {user.id}</p>
               <label className="secondary-button inline-flex w-fit items-center px-4 py-2 text-sm">
                 Выберите файл
                 <input

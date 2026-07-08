@@ -18,7 +18,6 @@ import { formatDateKey, formatTimeOnly, supportedTimeZones } from "@/lib/time";
 
 type UserOption = {
   id: string;
-  publicId: number;
   name: string;
   email: string;
   phone: string;

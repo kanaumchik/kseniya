@@ -18,10 +18,10 @@ export default async function BookingsPage() {
   }
 
   const [bookings, slots, user] = await Promise.all([
-    getUserBookings(session.user.id),
+    getUserBookings(Number(session.user.id)),
     getClientSlots(),
     prisma.user.findUnique({
-      where: { id: session.user.id },
+      where: { id: Number(session.user.id) },
       select: { name: true, email: true, timeZone: true },
     }),
   ]);
@@ -56,7 +56,7 @@ export default async function BookingsPage() {
   );
 }
 
-async function getUserBookings(userId: string): Promise<BookingSummary[]> {
+async function getUserBookings(userId: number): Promise<BookingSummary[]> {
   const bookings = await prisma.booking.findMany({
     where: { userId },
     orderBy: { startsAt: "asc" },
@@ -73,7 +73,7 @@ async function getUserBookings(userId: string): Promise<BookingSummary[]> {
   });
 
   return bookings.map((booking) => ({
-    id: booking.id,
+    id: String(booking.id),
     startsAt: booking.startsAt.toISOString(),
     endsAt: booking.endsAt.toISOString(),
     status: booking.status,

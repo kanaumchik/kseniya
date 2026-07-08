@@ -91,7 +91,6 @@ export async function registerAction(_previousState: string | undefined, formDat
 
   await prisma.user.create({
     data: {
-      publicId: await getNextPublicId(),
       email,
       name,
       gender,
@@ -120,6 +119,7 @@ export async function registerAction(_previousState: string | undefined, formDat
 
 export async function createBookingAction(formData: FormData) {
   const session = await requireSession();
+  const userId = getSessionUserId(session);
 
   if (session.user.role === "ADMIN") {
     throw new Error("Записаться на диагностику может только клиент.");
@@ -130,11 +130,11 @@ export async function createBookingAction(formData: FormData) {
   const startsAt = selectedSlot.startsAt;
   const endsAt = getBookingEnd(startsAt, bookingType);
   await ensureUserSlotCanBeBooked(startsAt, endsAt);
-  const clientTimeZone = await getClientTimeZone(session.user.id, formData.get("timeZone"), session.user.timeZone);
+  const clientTimeZone = await getClientTimeZone(userId, formData.get("timeZone"), session.user.timeZone);
 
   await prisma.booking.create({
     data: {
-      userId: session.user.id,
+      userId,
       startsAt,
       endsAt,
       clientTimeZone,
@@ -152,13 +152,14 @@ export async function adminCreateBookingAction(formData: FormData) {
   const session = await requireSession();
   assertAdmin(session.user.role);
 
-  const userId = String(formData.get("userId") ?? "");
+  const userId = parseId(formData.get("userId"), "Некорректный ID пользователя.");
+  const currentUserId = getSessionUserId(session);
   const bookingType = normalizeBookingType(String(formData.get("type") ?? "DIAGNOSTIC"));
   const selectedSlot = parseSlotDates(formData);
   const startsAt = selectedSlot.startsAt;
   const endsAt = getBookingEnd(startsAt, bookingType);
 
-  if (userId === session.user.id) {
+  if (userId === currentUserId) {
     throw new Error("Администратор не может записать сам себя.");
   }
 
@@ -204,12 +205,13 @@ export async function adminCreateBookingAction(formData: FormData) {
 
 export async function cancelBookingAction(formData: FormData) {
   const session = await requireSession();
+  const userId = getSessionUserId(session);
 
-  const bookingId = String(formData.get("bookingId") ?? "");
+  const bookingId = parseId(formData.get("bookingId"), "Некорректный ID записи.");
   const booking = await prisma.booking.findFirst({
     where: {
       id: bookingId,
-      ...(session.user.role === "ADMIN" ? {} : { userId: session.user.id }),
+      ...(session.user.role === "ADMIN" ? {} : { userId }),
       status: "ACTIVE",
     },
   });
@@ -235,15 +237,16 @@ export async function cancelBookingAction(formData: FormData) {
 
 export async function rescheduleBookingAction(formData: FormData) {
   const session = await requireSession();
+  const userId = getSessionUserId(session);
 
-  const bookingId = String(formData.get("bookingId") ?? "");
+  const bookingId = parseId(formData.get("bookingId"), "Некорректный ID записи.");
   const selectedSlot = parseSlotDates(formData);
-  const clientTimeZone = await getClientTimeZone(session.user.id, formData.get("timeZone"), session.user.timeZone);
+  const clientTimeZone = await getClientTimeZone(userId, formData.get("timeZone"), session.user.timeZone);
 
   const booking = await prisma.booking.findFirst({
     where: {
       id: bookingId,
-      ...(session.user.role === "ADMIN" ? {} : { userId: session.user.id }),
+      ...(session.user.role === "ADMIN" ? {} : { userId }),
       status: "ACTIVE",
     },
   });
@@ -291,6 +294,7 @@ export async function rescheduleBookingAction(formData: FormData) {
 
 export async function updateProfileAction(_previousState: string | undefined, formData: FormData) {
   const session = await requireSession();
+  const userId = getSessionUserId(session);
   const firstName = String(formData.get("firstName") ?? "").trim();
   const lastName = String(formData.get("lastName") ?? "").trim();
   const name = [firstName, lastName].filter(Boolean).join(" ");
@@ -335,7 +339,7 @@ export async function updateProfileAction(_previousState: string | undefined, fo
     }
 
     const currentUser = await prisma.user.findUnique({
-      where: { id: session.user.id },
+      where: { id: userId },
       select: { passwordHash: true },
     });
 
@@ -347,7 +351,7 @@ export async function updateProfileAction(_previousState: string | undefined, fo
   const existingUser = await prisma.user.findFirst({
     where: {
       email,
-      id: { not: session.user.id },
+      id: { not: userId },
     },
     select: { id: true },
   });
@@ -356,10 +360,10 @@ export async function updateProfileAction(_previousState: string | undefined, fo
     return "Пользователь с таким e-mail уже существует.";
   }
 
-  const photoPath = photo instanceof File && photo.size > 0 ? await saveProfilePhoto(session.user.id, photo) : undefined;
+  const photoPath = photo instanceof File && photo.size > 0 ? await saveProfilePhoto(userId, photo) : undefined;
 
   await prisma.user.update({
-    where: { id: session.user.id },
+    where: { id: userId },
     data: {
       email,
       name,
@@ -489,7 +493,7 @@ export async function cancelDayOffAction(formData: FormData) {
 export async function updateDayOffAction(formData: FormData) {
   const session = await requireSession();
   assertAdmin(session.user.role);
-  const dayOffId = String(formData.get("dayOffId") ?? "");
+  const dayOffId = parseId(formData.get("dayOffId"), "Некорректный ID day off.");
   const dateKey = String(formData.get("dateKey") ?? "");
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) {
@@ -557,6 +561,20 @@ function assertAdmin(role: "USER" | "ADMIN") {
   }
 }
 
+function getSessionUserId(session: Awaited<ReturnType<typeof requireSession>>) {
+  return parseId(session.user.id, "Некорректный ID пользователя в сессии.");
+}
+
+function parseId(value: FormDataEntryValue | string | null, message: string) {
+  const id = Number(value);
+
+  if (!Number.isSafeInteger(id) || id < 1) {
+    throw new Error(message);
+  }
+
+  return id;
+}
+
 function parseSlotDates(formData: FormData) {
   const slotValue = formData.get("slot");
   const [startsAtValue, endsAtValue] =
@@ -573,7 +591,7 @@ function parseSlotDates(formData: FormData) {
   return { startsAt, endsAt };
 }
 
-async function ensureUserSlotCanBeBooked(startsAt: Date, endsAt: Date, excludeBookingId?: string) {
+async function ensureUserSlotCanBeBooked(startsAt: Date, endsAt: Date, excludeBookingId?: number) {
   if (!isWithinUserBookingWindow(startsAt)) {
     throw new Error("Запись доступна только на ближайшие 14 дней и не раньше текущего времени.");
   }
@@ -581,7 +599,7 @@ async function ensureUserSlotCanBeBooked(startsAt: Date, endsAt: Date, excludeBo
   await ensureSlotCanBeBooked(startsAt, endsAt, excludeBookingId);
 }
 
-async function ensureSlotCanBeBooked(startsAt: Date, endsAt: Date, excludeBookingId?: string, options: { admin?: boolean } = {}) {
+async function ensureSlotCanBeBooked(startsAt: Date, endsAt: Date, excludeBookingId?: number, options: { admin?: boolean } = {}) {
   if (!(await isGeneratedSlot(startsAt, endsAt, { admin: options.admin }))) {
     throw new Error("Выбранный слот недоступен для записи.");
   }
@@ -637,16 +655,6 @@ function isValidPhone(value: string) {
   return /^\+(7|375|380|996)\(\d{3}\)-\d{3}-\d{2}-\d{2}$/.test(value);
 }
 
-async function getNextPublicId() {
-  const lastUser = await prisma.user.findFirst({
-    orderBy: { publicId: "desc" },
-    select: { publicId: true },
-    where: { publicId: { not: null } },
-  });
-
-  return Math.max(lastUser?.publicId ?? 2, 2) + 1;
-}
-
 async function getNextDiagnosticNumber() {
   const lastDiagnostic = await prisma.booking.findFirst({
     orderBy: { diagnosticNumber: "desc" },
@@ -693,7 +701,7 @@ function normalizeTimeZone(value: string) {
   return supportedTimeZones.some((timeZone) => timeZone.value === value) ? value : psychologistTimeZone;
 }
 
-async function getClientTimeZone(userId: string, value: FormDataEntryValue | null, fallback: string) {
+async function getClientTimeZone(userId: number, value: FormDataEntryValue | null, fallback: string) {
   if (typeof value === "string" && value) {
     return normalizeTimeZone(value);
   }
@@ -706,7 +714,7 @@ async function getClientTimeZone(userId: string, value: FormDataEntryValue | nul
   return normalizeTimeZone(user?.timeZone ?? fallback);
 }
 
-async function saveProfilePhoto(userId: string, file: File) {
+async function saveProfilePhoto(userId: number, file: File) {
   const extension = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
   const uploadsDir = path.join(process.cwd(), "public", "uploads", "profile");
   const fileName = `${userId}-${Date.now()}.${extension}`;

@@ -3,13 +3,12 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:../data/xeniia.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id           String         @id @default(cuid())
-  publicId     Int?
+  id           Int            @id @default(autoincrement())
   email        String         @unique
   name         String
   passwordHash String
@@ -24,13 +23,11 @@ model User {
   createdAt    DateTime       @default(now())
   bookings     Booking[]
   courses      ClientCourse[]
-
-  @@index([publicId])
 }
 
 model Booking {
-  id               String    @id @default(cuid())
-  userId           String
+  id               Int       @id @default(autoincrement())
+  userId           Int
   user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   startsAt         DateTime
   endsAt           DateTime
@@ -51,8 +48,8 @@ model Booking {
 }
 
 model ClientCourse {
-  id        String   @id @default(cuid())
-  userId    String
+  id        Int      @id @default(autoincrement())
+  userId    Int
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   title     String
   remaining Int      @default(0)
@@ -63,7 +60,7 @@ model ClientCourse {
 }
 
 model DaySchedule {
-  id                  String   @id @default(cuid())
+  id                  Int      @id @default(autoincrement())
   dateKey             String   @unique
   slotDurationMinutes Int      @default(120)
   createdAt           DateTime @default(now())
@@ -71,7 +68,7 @@ model DaySchedule {
 }
 
 model HiddenSlot {
-  id        String   @id @default(cuid())
+  id        Int      @id @default(autoincrement())
   startsAt  DateTime @unique
   dateKey   String
   createdAt DateTime @default(now())
@@ -80,7 +77,7 @@ model HiddenSlot {
 }
 
 model CustomSlot {
-  id        String   @id @default(cuid())
+  id        Int      @id @default(autoincrement())
   startsAt  DateTime @unique
   endsAt    DateTime
   dateKey   String
@@ -90,7 +87,7 @@ model CustomSlot {
 }
 
 model DayOff {
-  id        String   @id @default(cuid())
+  id        Int      @id @default(autoincrement())
   dateKey   String   @unique
   createdAt DateTime @default(now())
 }

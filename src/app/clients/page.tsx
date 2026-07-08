@@ -34,7 +34,7 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
   const [clients, adminUser] = await Promise.all([
     getClients(filters),
     prisma.user.findUnique({
-      where: { id: session.user.id },
+      where: { id: Number(session.user.id) },
       select: { name: true },
     }),
   ]);
@@ -87,7 +87,7 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
                       <Link className="font-medium text-[var(--gold-light)] hover:text-[var(--gold)]" href={`/clients/${client.id}`}>
                         {client.name}
                       </Link>
-                      {client.publicId ? <span className="ml-2 text-xs text-[var(--muted)]">ID {client.publicId}</span> : null}
+                      <span className="ml-2 text-xs text-[var(--muted)]">ID {client.id}</span>
                     </td>
                     <td className="py-3 pr-4 text-white/82">{client.email}</td>
                     <td className="py-3 pr-4 text-white/82">{client.phone || "Не указан"}</td>
@@ -118,7 +118,7 @@ async function getClients(filters: { course: string; email: string; name: string
         orderBy: { updatedAt: "desc" },
       },
     },
-    orderBy: [{ publicId: "asc" }, { createdAt: "asc" }],
+    orderBy: [{ id: "asc" }, { createdAt: "asc" }],
   });
 
   return clients.filter((client) => {

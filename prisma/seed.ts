@@ -4,43 +4,34 @@ import { hashPassword } from "../src/lib/password";
 const prisma = new PrismaClient();
 
 async function main() {
+  const adminPassword = process.env.ADMIN_PASSWORD;
+
+  if (!adminPassword) {
+    throw new Error("ADMIN_PASSWORD is required to seed the admin account.");
+  }
+
   await prisma.user.upsert({
-    where: { email: "k.a.naumchik@gmail.com" },
+    where: { id: 1 },
     update: {
-      publicId: 1,
+      email: "naumchik.psy@yandex.ru",
       name: "Ксения Наумчик",
-      passwordHash: await hashPassword("1234"),
+      passwordHash: await hashPassword(adminPassword),
       role: "ADMIN",
       timeZone: "Asia/Yekaterinburg",
     },
     create: {
-      publicId: 1,
-      email: "k.a.naumchik@gmail.com",
+      id: 1,
+      email: "naumchik.psy@yandex.ru",
       name: "Ксения Наумчик",
-      passwordHash: await hashPassword("1234"),
+      passwordHash: await hashPassword(adminPassword),
       role: "ADMIN",
       timeZone: "Asia/Yekaterinburg",
     },
   });
 
-  await prisma.user.upsert({
-    where: { email: "basov.o.p@gmail.com" },
-    update: {
-      publicId: 2,
-      name: "Олег Басов",
-      passwordHash: await hashPassword("8765"),
-      role: "USER",
-      timeZone: "Europe/Moscow",
-    },
-    create: {
-      publicId: 2,
-      email: "basov.o.p@gmail.com",
-      name: "Олег Басов",
-      passwordHash: await hashPassword("8765"),
-      role: "USER",
-      timeZone: "Europe/Moscow",
-    },
-  });
+  await prisma.$executeRaw`
+    SELECT setval(pg_get_serial_sequence('"User"', 'id'), COALESCE((SELECT MAX(id) FROM "User"), 1))
+  `;
 }
 
 main()

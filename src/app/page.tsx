@@ -13,7 +13,7 @@ export default async function Home() {
   const [currentUser, users] = await Promise.all([
     session?.user
       ? prisma.user.findUnique({
-          where: { id: session.user.id },
+          where: { id: Number(session.user.id) },
           select: { name: true, email: true, timeZone: true },
         })
       : null,
@@ -40,7 +40,7 @@ export default async function Home() {
       role={role}
       slots={slots}
       timeZone={timeZone}
-      users={users}
+      users={users.map((user) => ({ ...user, id: String(user.id) }))}
       year={now.getFullYear()}
     />
   );

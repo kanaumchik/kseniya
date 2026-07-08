@@ -24,13 +24,13 @@ export const bookingDurations = {
 export type BookingType = keyof typeof bookingDurations;
 
 type BookingWithUser = {
-  id: string;
+  id: number;
   startsAt: Date;
   endsAt: Date;
   type: string;
   diagnosticNumber: number | null;
   user: {
-    id: string;
+    id: number;
     name: string;
     email: string;
     phone: string | null;
@@ -110,7 +110,7 @@ export function isWithinUserBookingWindow(startsAt: Date) {
   return startsAtDateKey !== todayKey && startsAt > now && startsAt <= latestStart;
 }
 
-export async function getActiveSlotConflict(startsAt: Date, endsAt: Date, excludeBookingId?: string) {
+export async function getActiveSlotConflict(startsAt: Date, endsAt: Date, excludeBookingId?: number) {
   return prisma.booking.findFirst({
     where: {
       status: "ACTIVE",
@@ -266,7 +266,7 @@ async function getSlotsForDateKeys(
 }
 
 function buildCustomSlot(
-  customSlot: { id: string; startsAt: Date; endsAt: Date; dateKey: string },
+  customSlot: { id: number; startsAt: Date; endsAt: Date; dateKey: string },
   bookings: BookingWithUser[],
   hiddenSlotStarts: Set<string>,
   dayOffDateKeys: Set<string>,
@@ -280,7 +280,7 @@ function buildCustomSlot(
     : undefined;
 
   return {
-    id: customSlot.id,
+    id: String(customSlot.id),
     dateKey: customSlot.dateKey,
     startsAt: customSlot.startsAt.toISOString(),
     endsAt: customSlot.endsAt.toISOString(),
@@ -288,10 +288,10 @@ function buildCustomSlot(
     isBooked: Boolean(booking),
     isBlocked,
     isDayOff: dayOffDateKeys.has(customSlot.dateKey),
-    bookingId: booking?.id,
+    bookingId: booking ? String(booking.id) : undefined,
     bookingType: booking?.type,
     diagnosticNumber: booking?.diagnosticNumber,
-    bookedUserId: booking?.user.id,
+    bookedUserId: booking ? String(booking.user.id) : undefined,
     bookedBy: booking ? `${booking.user.name} (${booking.user.email})` : undefined,
     bookedByEmail: booking?.user.email,
     bookedByPhone: booking?.user.phone,
@@ -333,10 +333,10 @@ function buildSlotsForDateKey(
       isBooked: Boolean(booking),
       isBlocked,
       isDayOff,
-      bookingId: booking?.id,
+      bookingId: booking ? String(booking.id) : undefined,
       bookingType: booking?.type,
       diagnosticNumber: booking?.diagnosticNumber,
-      bookedUserId: booking?.user.id,
+      bookedUserId: booking ? String(booking.user.id) : undefined,
       bookedBy: booking ? `${booking.user.name} (${booking.user.email})` : undefined,
       bookedByEmail: booking?.user.email,
       bookedByPhone: booking?.user.phone,

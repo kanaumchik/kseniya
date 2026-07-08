@@ -23,9 +23,15 @@ export default async function ClientProfilePage({ params }: ClientProfilePagePro
   }
 
   const { id } = await params;
+  const clientId = Number(id);
+
+  if (!Number.isSafeInteger(clientId) || clientId < 1) {
+    notFound();
+  }
+
   const [client, adminUser] = await Promise.all([
     prisma.user.findUnique({
-      where: { id },
+      where: { id: clientId },
       include: {
         courses: {
           orderBy: { updatedAt: "desc" },
@@ -37,7 +43,7 @@ export default async function ClientProfilePage({ params }: ClientProfilePagePro
       },
     }),
     prisma.user.findUnique({
-      where: { id: session.user.id },
+      where: { id: Number(session.user.id) },
       select: { name: true },
     }),
   ]);
@@ -64,7 +70,7 @@ export default async function ClientProfilePage({ params }: ClientProfilePagePro
         </Link>
 
         <div className="rounded-md border border-[var(--line)] bg-[var(--surface)] p-5">
-          <p className="text-sm text-[var(--muted)]">ID {client.publicId ?? "не назначен"}</p>
+          <p className="text-sm text-[var(--muted)]">ID {client.id}</p>
           <h1 className="mt-2 font-serif text-3xl text-[var(--gold-light)]">{client.name}</h1>
           <div className="mt-5 grid gap-3 text-sm md:grid-cols-2">
             <Info label="E-mail" value={client.email} />

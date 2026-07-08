@@ -41,7 +41,6 @@ export default async function SchedulePage({ searchParams }: SchedulePageProps) 
       where: { role: "USER" },
       select: {
         id: true,
-        publicId: true,
         name: true,
         email: true,
         phone: true,
@@ -56,7 +55,7 @@ export default async function SchedulePage({ searchParams }: SchedulePageProps) 
       },
     }),
     prisma.user.findUnique({
-      where: { id: session.user.id },
+      where: { id: Number(session.user.id) },
       select: { name: true, email: true },
     }),
   ]);
@@ -84,12 +83,12 @@ export default async function SchedulePage({ searchParams }: SchedulePageProps) 
         availableSlots={availableSlots}
         currentUser={{ id: session.user.id, name: adminUser?.name ?? session.user.name ?? "Профиль", email: adminUser?.email ?? session.user.email ?? "" }}
         day={day}
-        dayOffs={dayOffs}
+        dayOffs={dayOffs.map((dayOff) => ({ ...dayOff, id: String(dayOff.id) }))}
         month={month}
         notice={params.notice ?? ""}
         slots={slots}
         timeZone={psychologistTimeZone}
-        users={users.map((user) => ({ ...user, publicId: user.publicId ?? 0, phone: user.phone ?? "" }))}
+        users={users.map((user) => ({ ...user, id: String(user.id), phone: user.phone ?? "" }))}
         view={view}
         year={year}
       />
