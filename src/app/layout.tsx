@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Xeniia | Консультации психолога",
+  title: "Ксения Наумчик | Автор трансформационных программ",
   description: "Локальный сайт записи на индивидуальную диагностику.",
 };
 

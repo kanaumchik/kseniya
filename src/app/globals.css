@@ -176,9 +176,10 @@ select option {
 }
 
 .auth-tab {
-  min-height: 2.5rem;
+  min-height: 2.15rem;
   border: 1px solid transparent;
   color: rgba(255, 255, 255, 0.72);
+  font-size: 0.9rem;
 }
 
 .calendar-date {
@@ -209,8 +210,30 @@ select option {
 .auth-tab:hover,
 .auth-tab-active {
   border-color: rgba(232, 197, 122, 0.16);
-  background: rgba(214, 170, 79, 0.14);
+  background: rgba(214, 170, 79, 0.09);
   color: var(--gold-light);
+}
+
+.auth-modal-scrollbar {
+  scrollbar-color: rgba(232, 197, 122, 0.32) rgba(255, 255, 255, 0.04);
+  scrollbar-width: thin;
+}
+
+.auth-modal-scrollbar::-webkit-scrollbar {
+  width: 0.45rem;
+}
+
+.auth-modal-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.auth-modal-scrollbar::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(232, 197, 122, 0.32);
+}
+
+.auth-modal-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(232, 197, 122, 0.46);
 }
 
 .field {

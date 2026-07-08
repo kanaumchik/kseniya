@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { loginAction, registerAction } from "@/app/actions";
 
 type AuthModalProps = {
@@ -14,9 +15,13 @@ export function AuthModal({ triggerLabel = "Войти", variant = "nav" }: Auth
   const [birthDate, setBirthDate] = useState("");
   const [phonePrefix, setPhonePrefix] = useState("+7");
   const [phone, setPhone] = useState("");
+  const [isLoginPasswordVisible, setIsLoginPasswordVisible] = useState(false);
+  const [isRegisterPasswordVisible, setIsRegisterPasswordVisible] = useState(false);
+  const [isRegisterPasswordRepeatVisible, setIsRegisterPasswordRepeatVisible] = useState(false);
   const bodyRef = useRef<HTMLDivElement>(null);
   const [loginError, loginFormAction, isLoginPending] = useActionState(loginAction, undefined);
   const [registerError, registerFormAction, isRegisterPending] = useActionState(registerAction, undefined);
+  const modalTitle = activeTab === "login" ? "Вход в личный кабинет" : "Создайте личный кабинет";
 
   useEffect(() => {
     if (!isOpen) {
@@ -48,20 +53,20 @@ export function AuthModal({ triggerLabel = "Войти", variant = "nav" }: Auth
         {triggerLabel}
       </button>
 
-      {isOpen ? (
+      {isOpen && typeof document !== "undefined" ? createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/82 px-4 py-6 backdrop-blur-md" role="dialog" aria-modal="true">
-          <div className="relative flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-md border border-white/[0.1] bg-[#10100f] shadow-2xl shadow-black">
+          <div className="relative flex max-h-[88vh] w-full max-w-xl flex-col overflow-hidden rounded-md border border-white/[0.1] bg-[#10100f] shadow-2xl shadow-black">
             <div className="flex items-start justify-between gap-4 border-b border-white/[0.08] p-5 pb-4 sm:p-6 sm:pb-5">
               <div>
                 <p className="text-xs uppercase text-[var(--gold)]">Личный кабинет</p>
-                <h2 className="mt-2 font-serif text-3xl leading-tight text-[var(--gold-light)]">Вход на сайт</h2>
+                <h2 className="mt-2 font-serif text-3xl leading-tight text-[var(--gold-light)]">{modalTitle}</h2>
               </div>
               <button className="icon-button" onClick={() => setIsOpen(false)} type="button" aria-label="Закрыть">
                 ×
               </button>
             </div>
 
-            <div className="mx-5 mt-5 grid grid-cols-2 rounded-md border border-white/[0.08] bg-black/28 p-1 sm:mx-6">
+            <div className="mx-5 mt-5 grid grid-cols-2 rounded-md border border-white/[0.08] bg-black/16 p-0.5 sm:mx-6">
               <button className={activeTab === "login" ? "auth-tab auth-tab-active" : "auth-tab"} onClick={() => setActiveTab("login")} type="button">
                 Авторизация
               </button>
@@ -70,7 +75,7 @@ export function AuthModal({ triggerLabel = "Войти", variant = "nav" }: Auth
               </button>
             </div>
 
-            <div ref={bodyRef} className="min-h-0 overflow-y-auto p-5 pt-6 sm:p-6">
+            <div ref={bodyRef} className="auth-modal-scrollbar min-h-0 overflow-y-auto p-5 pt-6 sm:p-6">
               {activeTab === "login" ? (
               <form action={loginFormAction} className="grid gap-4">
                 <label className="grid gap-2 text-sm font-medium text-white/86" htmlFor="login-email">
@@ -79,26 +84,38 @@ export function AuthModal({ triggerLabel = "Войти", variant = "nav" }: Auth
                 </label>
 
                 <label className="grid gap-2 text-sm font-medium text-white/86" htmlFor="login-password">
-                  Пароль
-                  <input
-                    className="field"
-                    id="login-password"
-                    name="password"
-                    type="password"
-                    placeholder="Укажите Ваш пароль"
-                    autoComplete="current-password"
-                    required
-                  />
+                  <span className="flex items-center justify-between gap-3">
+                    <span>Пароль</span>
+                    <button className="text-xs font-semibold text-[var(--gold-light)] transition hover:text-[var(--gold)]" type="button">
+                      Забыли пароль?
+                    </button>
+                  </span>
+                  <span className="relative">
+                    <input
+                      className="field w-full pr-12"
+                      id="login-password"
+                      name="password"
+                      type={isLoginPasswordVisible ? "text" : "password"}
+                      placeholder="Укажите Ваш пароль"
+                      autoComplete="current-password"
+                      required
+                    />
+                    <button
+                      aria-label={isLoginPasswordVisible ? "Скрыть пароль" : "Показать пароль"}
+                      className="absolute right-2 top-1/2 inline-flex size-9 -translate-y-1/2 items-center justify-center rounded text-white/64 transition hover:bg-white/[0.06] hover:text-[var(--gold-light)]"
+                      onClick={() => setIsLoginPasswordVisible((current) => !current)}
+                      type="button"
+                    >
+                      <PasswordVisibilityIcon isVisible={isLoginPasswordVisible} />
+                    </button>
+                  </span>
                 </label>
 
                 {loginError ? <p className="text-sm text-[var(--danger)]">{loginError}</p> : null}
 
-                <div className="mt-1 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <button className="primary-button px-6 py-3 text-sm" disabled={isLoginPending} type="submit">
+                <div className="mt-1">
+                  <button className="primary-button min-h-14 w-full px-6 py-3 text-base" disabled={isLoginPending} type="submit">
                     {isLoginPending ? "Входим..." : "Войти"}
-                  </button>
-                  <button className="text-left text-sm font-medium text-[var(--gold-light)] transition hover:text-[var(--gold)]" type="button">
-                    Забыли пароль?
                   </button>
                 </div>
               </form>
@@ -186,48 +203,71 @@ export function AuthModal({ triggerLabel = "Войти", variant = "nav" }: Auth
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="grid gap-2 text-sm font-medium text-white/86" htmlFor="register-password">
                     Пароль
-                    <input
-                      className="field"
-                      id="register-password"
-                      name="password"
-                      type="password"
-                      placeholder="Минимум 6 символов"
-                      autoComplete="new-password"
-                      minLength={6}
-                      required
-                    />
+                    <span className="relative">
+                      <input
+                        className="field w-full pr-12"
+                        id="register-password"
+                        name="password"
+                        type={isRegisterPasswordVisible ? "text" : "password"}
+                        placeholder="Минимум 6 символов"
+                        autoComplete="new-password"
+                        minLength={6}
+                        required
+                      />
+                      <button
+                        aria-label={isRegisterPasswordVisible ? "Скрыть пароль" : "Показать пароль"}
+                        className="absolute right-2 top-1/2 inline-flex size-9 -translate-y-1/2 items-center justify-center rounded text-white/64 transition hover:bg-white/[0.06] hover:text-[var(--gold-light)]"
+                        onClick={() => setIsRegisterPasswordVisible((current) => !current)}
+                        type="button"
+                      >
+                        <PasswordVisibilityIcon isVisible={isRegisterPasswordVisible} />
+                      </button>
+                    </span>
                   </label>
 
                   <label className="grid gap-2 text-sm font-medium text-white/86" htmlFor="register-password-repeat">
                     Повторите пароль
-                    <input
-                      className="field"
-                      id="register-password-repeat"
-                      name="passwordRepeat"
-                      type="password"
-                      placeholder="Минимум 6 символов"
-                      autoComplete="new-password"
-                      minLength={6}
-                      required
-                    />
+                    <span className="relative">
+                      <input
+                        className="field w-full pr-12"
+                        id="register-password-repeat"
+                        name="passwordRepeat"
+                        type={isRegisterPasswordRepeatVisible ? "text" : "password"}
+                        placeholder="Минимум 6 символов"
+                        autoComplete="new-password"
+                        minLength={6}
+                        required
+                      />
+                      <button
+                        aria-label={isRegisterPasswordRepeatVisible ? "Скрыть пароль" : "Показать пароль"}
+                        className="absolute right-2 top-1/2 inline-flex size-9 -translate-y-1/2 items-center justify-center rounded text-white/64 transition hover:bg-white/[0.06] hover:text-[var(--gold-light)]"
+                        onClick={() => setIsRegisterPasswordRepeatVisible((current) => !current)}
+                        type="button"
+                      >
+                        <PasswordVisibilityIcon isVisible={isRegisterPasswordRepeatVisible} />
+                      </button>
+                    </span>
                   </label>
                 </div>
 
-                <label className="flex rounded-md border border-white/[0.08] bg-black/18 p-3 text-sm leading-6 text-white/74">
+                <label className="flex gap-3 rounded-md border border-white/[0.08] bg-black/18 p-3 text-sm leading-6 text-white/74">
                   <input className="mt-1 size-4 accent-[var(--gold)]" name="consent" type="checkbox" value="accepted" required />
-                  <span>Я принимаю условия, Политику обработки персональных данных и даю согласие на обработку персональных данных</span>
+                  <span>Я принимаю условия использования и политику обработки персональных данных</span>
                 </label>
 
                 {registerError ? <p className="text-sm text-[var(--danger)]">{registerError}</p> : null}
 
-                <button className="primary-button px-6 py-3 text-sm" disabled={isRegisterPending} type="submit">
-                  {isRegisterPending ? "Регистрируем..." : "Зарегистрироваться"}
-                </button>
+                <div className="sticky bottom-[-1.5rem] -mx-5 -mb-5 border-t border-white/[0.08] bg-[#10100f]/96 p-5 pt-4 backdrop-blur sm:-mx-6 sm:-mb-6 sm:p-6 sm:pt-4">
+                  <button className="primary-button min-h-14 w-full px-6 py-3 text-base" disabled={isRegisterPending} type="submit">
+                    {isRegisterPending ? "Регистрируем..." : "Зарегистрироваться"}
+                  </button>
+                </div>
               </form>
             )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       ) : null}
     </>
   );
@@ -238,6 +278,30 @@ function formatBirthDateInput(value: string) {
   const parts = [digits.slice(0, 2), digits.slice(2, 4), digits.slice(4, 8)].filter(Boolean);
 
   return parts.join(".");
+}
+
+function PasswordVisibilityIcon({ isVisible }: { isVisible: boolean }) {
+  return (
+    <svg className="size-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+      />
+      <path
+        d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+      />
+      {!isVisible ? (
+        <path d="M4 20 20 4" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+      ) : null}
+    </svg>
+  );
 }
 
 function formatPhoneInput(value: string) {
