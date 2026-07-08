@@ -206,6 +206,7 @@ export function AdminSchedule({ availableSlots, currentUser, day, dayOffs, month
                 </form>
                 <BookingModal buttonLabel="Перенести" title="Перенос записи" variant="nav">
                   <BookingCalendar
+                    bookingType={selectedSlot.bookingType === "SESSION" ? "SESSION" : "DIAGNOSTIC"}
                     currentUser={currentUser}
                     rescheduleBookingId={selectedSlot.bookingId}
                     rescheduleFromLabel={formatSlotFullDate(selectedSlot, selectedTimeZone)}

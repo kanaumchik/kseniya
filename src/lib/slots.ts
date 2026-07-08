@@ -11,8 +11,17 @@ const workdayStartHour = 10;
 const workdayEndHour = 22;
 export const defaultSlotDurationMinutes = 120;
 export const adminSlotDurationMinutes = 60;
+export const clientSlotStepMinutes = 60;
+export const diagnosticDurationMinutes = 60;
+export const sessionDurationMinutes = 90;
 export const userBookingWindowDays = 14;
 export const allowedSlotDurations = [60, 90, 120, 180] as const;
+export const bookingDurations = {
+  DIAGNOSTIC: diagnosticDurationMinutes,
+  SESSION: sessionDurationMinutes,
+} as const;
+
+export type BookingType = keyof typeof bookingDurations;
 
 type BookingWithUser = {
   id: string;
@@ -44,6 +53,7 @@ export type Slot = {
   bookedBy?: string;
   bookedByEmail?: string;
   bookedByPhone?: string | null;
+  availableBookingTypes?: BookingType[];
 };
 
 export async function getSlotsForMonth(year: number, month: number, options: { admin?: boolean } = {}) {
@@ -57,7 +67,10 @@ export async function getClientSlots() {
   const todayKey = formatDateKey(now, psychologistTimeZone);
   const firstDateKey = formatDateKey(addDays(now, 1), psychologistTimeZone);
   const lastDateKey = formatDateKey(addDays(latestStart, 1), psychologistTimeZone);
-  const slots = await getSlotsForDateKeys(getDateKeysBetween(firstDateKey, lastDateKey));
+  const slots = await getSlotsForDateKeys(getDateKeysBetween(firstDateKey, lastDateKey), {
+    availabilityDurations: bookingDurations,
+    slotDurationMinutes: clientSlotStepMinutes,
+  });
 
   return slots.filter((slot) => {
     const startsAt = new Date(slot.startsAt);
@@ -65,7 +78,7 @@ export async function getClientSlots() {
       slot.dateKey !== todayKey &&
       startsAt > now &&
       startsAt <= latestStart &&
-      !slot.isBooked &&
+      (slot.availableBookingTypes?.length ?? 0) > 0 &&
       !slot.isBlocked &&
       !slot.isDayOff
     );
@@ -80,10 +93,12 @@ export async function isGeneratedSlot(startsAt: Date, endsAt: Date, options: { a
   }
 
   const dateKey = formatDateKey(startsAt, psychologistTimeZone);
-  const durationMinutes = options.admin ? adminSlotDurationMinutes : await getSlotDurationForDateKey(dateKey);
-  const slots = buildSlotsForDateKey(dateKey, durationMinutes, [], new Set(), new Set());
+  const durationMinutes = Math.round((endsAt.getTime() - startsAt.getTime()) / 60000);
+  const slotStepMinutes = options.admin ? adminSlotDurationMinutes : clientSlotStepMinutes;
+  const slots = buildSlotsForDateKey(dateKey, slotStepMinutes, [], new Set(), new Set());
+  const workdayEnd = makeZonedDateFromKey(dateKey, workdayEndHour, psychologistTimeZone);
 
-  return slots.some((slot) => slot.startsAt === startsAt.toISOString() && slot.endsAt === endsAt.toISOString());
+  return slots.some((slot) => slot.startsAt === startsAt.toISOString()) && [diagnosticDurationMinutes, sessionDurationMinutes].includes(durationMinutes) && endsAt <= workdayEnd;
 }
 
 export function isWithinUserBookingWindow(startsAt: Date) {
@@ -169,10 +184,17 @@ export function getDateKeysForAdminView(year: number, month: number, view: "mont
 }
 
 export async function getAdminSlotsForDateKeys(dateKeys: string[]) {
-  return getSlotsForDateKeys(dateKeys, { admin: true });
+  return getSlotsForDateKeys(dateKeys, { admin: true, availabilityDurations: bookingDurations });
 }
 
-async function getSlotsForDateKeys(dateKeys: string[], options: { admin?: boolean } = {}) {
+async function getSlotsForDateKeys(
+  dateKeys: string[],
+  options: {
+    admin?: boolean;
+    availabilityDurations?: Partial<Record<BookingType, number>>;
+    slotDurationMinutes?: number;
+  } = {},
+) {
   if (dateKeys.length === 0) {
     return [];
   }
@@ -228,16 +250,17 @@ async function getSlotsForDateKeys(dateKeys: string[], options: { admin?: boolea
   const generatedSlots = dateKeys.flatMap((dateKey) =>
     buildSlotsForDateKey(
       dateKey,
-      options.admin ? adminSlotDurationMinutes : (settingsByDate.get(dateKey) ?? defaultSlotDurationMinutes),
+      options.slotDurationMinutes ?? (options.admin ? adminSlotDurationMinutes : (settingsByDate.get(dateKey) ?? defaultSlotDurationMinutes)),
       bookings,
       hiddenSlotStarts,
       dayOffDateKeys,
+      options.availabilityDurations,
     ),
   );
   const generatedStarts = new Set(generatedSlots.map((slot) => slot.startsAt));
   const customVisibleSlots = customSlots
     .filter((slot) => !generatedStarts.has(slot.startsAt.toISOString()))
-    .map((slot) => buildCustomSlot(slot, bookings, hiddenSlotStarts, dayOffDateKeys));
+    .map((slot) => buildCustomSlot(slot, bookings, hiddenSlotStarts, dayOffDateKeys, options.availabilityDurations));
 
   return [...generatedSlots, ...customVisibleSlots].sort((first, second) => first.startsAt.localeCompare(second.startsAt));
 }
@@ -247,10 +270,14 @@ function buildCustomSlot(
   bookings: BookingWithUser[],
   hiddenSlotStarts: Set<string>,
   dayOffDateKeys: Set<string>,
+  availabilityDurations?: Partial<Record<BookingType, number>>,
 ) {
   const booking = bookings.find((candidate) => customSlot.startsAt < candidate.endsAt && customSlot.endsAt > candidate.startsAt);
   const isBlocked = hiddenSlotStarts.has(customSlot.startsAt.toISOString());
   const durationMinutes = Math.round((customSlot.endsAt.getTime() - customSlot.startsAt.getTime()) / 60000);
+  const availableBookingTypes = availabilityDurations
+    ? getAvailableBookingTypes(customSlot.startsAt, customSlot.endsAt, bookings, availabilityDurations)
+    : undefined;
 
   return {
     id: customSlot.id,
@@ -268,6 +295,7 @@ function buildCustomSlot(
     bookedBy: booking ? `${booking.user.name} (${booking.user.email})` : undefined,
     bookedByEmail: booking?.user.email,
     bookedByPhone: booking?.user.phone,
+    availableBookingTypes,
   };
 }
 
@@ -277,6 +305,7 @@ function buildSlotsForDateKey(
   bookings: BookingWithUser[],
   hiddenSlotStarts: Set<string>,
   dayOffDateKeys: Set<string>,
+  availabilityDurations?: Partial<Record<BookingType, number>>,
 ) {
   const slots: Slot[] = [];
   const workdayStart = makeZonedDateFromKey(dateKey, workdayStartHour, psychologistTimeZone);
@@ -291,6 +320,9 @@ function buildSlotsForDateKey(
     const endsAt = addMinutes(startsAt, durationMinutes);
     const booking = bookings.find((candidate) => startsAt < candidate.endsAt && endsAt > candidate.startsAt);
     const isBlocked = hiddenSlotStarts.has(startsAt.toISOString());
+    const availableBookingTypes = availabilityDurations
+      ? getAvailableBookingTypes(startsAt, workdayEnd, bookings, availabilityDurations)
+      : undefined;
 
     slots.push({
       id: `${dateKey}-${startsAt.toISOString()}`,
@@ -308,8 +340,24 @@ function buildSlotsForDateKey(
       bookedBy: booking ? `${booking.user.name} (${booking.user.email})` : undefined,
       bookedByEmail: booking?.user.email,
       bookedByPhone: booking?.user.phone,
+      availableBookingTypes,
     });
   }
 
   return slots;
+}
+
+function getAvailableBookingTypes(
+  startsAt: Date,
+  workdayEnd: Date,
+  bookings: BookingWithUser[],
+  availabilityDurations: Partial<Record<BookingType, number>>,
+) {
+  return (Object.entries(availabilityDurations) as [BookingType, number][])
+    .filter(([, durationMinutes]) => {
+      const endsAt = addMinutes(startsAt, durationMinutes);
+
+      return endsAt <= workdayEnd && !bookings.some((booking) => startsAt < booking.endsAt && endsAt > booking.startsAt);
+    })
+    .map(([bookingType]) => bookingType);
 }

@@ -52,7 +52,7 @@ export function BookingModal({ buttonLabel, title, children, variant = "primary"
 
       {isOpen ? (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 py-6 backdrop-blur-sm"
+          className="fixed inset-0 z-[90] flex items-start justify-center overflow-y-auto bg-black/80 px-4 py-8 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           onMouseDown={(event) => {
@@ -61,7 +61,7 @@ export function BookingModal({ buttonLabel, title, children, variant = "primary"
             }
           }}
         >
-          <div className="relative max-h-[90vh] w-full max-w-6xl overflow-y-auto rounded-md border border-[var(--line)] bg-[var(--surface)] p-5 shadow-2xl shadow-black">
+          <div className="relative my-auto max-h-[calc(100vh-4rem)] w-full max-w-6xl overflow-y-auto rounded-md border border-[var(--line)] bg-[var(--surface)] p-5 shadow-2xl shadow-black">
             <div className="mb-5 flex items-start justify-between gap-4 border-b border-[var(--line)] pb-4">
               <div>
                 <p className="text-xs uppercase tracking-[0.28em] text-[var(--gold)]">Диагностика</p>

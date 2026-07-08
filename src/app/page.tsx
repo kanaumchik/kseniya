@@ -9,10 +9,16 @@ export default async function Home() {
   const now = new Date();
   const isAdmin = session?.user.role === "ADMIN";
   const role = session?.user.role ?? null;
-  const timeZone = session?.user ? (isAdmin ? psychologistTimeZone : session.user.timeZone) : psychologistTimeZone;
   const slots = session?.user ? await getClientSlots() : [];
-  const users = isAdmin
-    ? await prisma.user.findMany({
+  const [currentUser, users] = await Promise.all([
+    session?.user
+      ? prisma.user.findUnique({
+          where: { id: session.user.id },
+          select: { name: true, email: true, timeZone: true },
+        })
+      : null,
+    isAdmin
+      ? prisma.user.findMany({
         where: { role: "USER" },
         select: {
           id: true,
@@ -21,14 +27,16 @@ export default async function Home() {
         },
         orderBy: { email: "asc" },
       })
-    : [];
+      : [],
+  ]);
+  const timeZone = session?.user ? (isAdmin ? psychologistTimeZone : (currentUser?.timeZone ?? session.user.timeZone)) : psychologistTimeZone;
 
   return (
     <DashboardHome
-      email={session?.user.email}
+      email={currentUser?.email ?? session?.user.email}
       id={session?.user.id}
       month={now.getMonth() + 1}
-      name={session?.user.name}
+      name={currentUser?.name ?? session?.user.name}
       role={role}
       slots={slots}
       timeZone={timeZone}

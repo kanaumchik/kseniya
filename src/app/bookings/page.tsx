@@ -22,10 +22,11 @@ export default async function BookingsPage() {
     getClientSlots(),
     prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { name: true, email: true },
+      select: { name: true, email: true, timeZone: true },
     }),
   ]);
   const availableSlots = slots.filter((slot) => !slot.isBooked);
+  const profileTimeZone = user?.timeZone ?? session.user.timeZone;
 
   return (
     <main className="min-h-screen bg-[var(--background)] text-white">
@@ -49,7 +50,7 @@ export default async function BookingsPage() {
         availableSlots={availableSlots}
         bookings={bookings}
         currentUser={{ id: session.user.id, name: user?.name ?? session.user.name ?? "Профиль", email: user?.email ?? session.user.email ?? "" }}
-        timeZone={session.user.timeZone}
+        timeZone={profileTimeZone}
       />
     </main>
   );

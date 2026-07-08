@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { cancelBookingAction } from "@/app/actions";
 import { BookingCalendar } from "@/components/BookingCalendar";
@@ -31,7 +32,7 @@ type MyBookingsProps = {
 };
 
 export function MyBookings({ bookings, availableSlots, timeZone, currentUser }: MyBookingsProps) {
-  const [selectedTimeZone, setSelectedTimeZone] = useState(timeZone);
+  const timeZoneLabel = supportedTimeZones.find((zone) => zone.value === timeZone)?.label ?? timeZone;
   const now = new Date();
   const actualBookings = bookings
     .filter((booking) => booking.status === "ACTIVE" && new Date(booking.endsAt) >= now)
@@ -50,22 +51,21 @@ export function MyBookings({ bookings, availableSlots, timeZone, currentUser }: 
               Здесь собраны будущие встречи и история отмененных или прошедших записей.
             </p>
           </div>
-          <label className="grid gap-2 text-sm font-medium text-white/86">
-            Часовой пояс
-            <select className="field min-w-56 text-sm" value={selectedTimeZone} onChange={(event) => setSelectedTimeZone(event.target.value)}>
-              {supportedTimeZones.map((zone) => (
-                <option key={zone.value} value={zone.value}>
-                  {zone.label}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="grid gap-2 text-sm font-medium text-white/86">
+            <span>Часовой пояс</span>
+            <div className="flex min-h-11 min-w-56 items-center justify-between gap-3 rounded-md border border-[rgba(232,197,122,0.16)] bg-black/28 px-3 py-2">
+              <span className="truncate text-sm text-white/86">{timeZoneLabel}</span>
+              <Link className="secondary-button inline-flex min-h-8 items-center px-3 py-1 text-xs" href="/profile">
+                Изменить
+              </Link>
+            </div>
+          </div>
         </div>
 
         <div className="mt-4 grid gap-3">
           {actualBookings.length > 0 ? (
             actualBookings.map((booking) => (
-              <BookingItem booking={booking} availableSlots={availableSlots} currentUser={currentUser} key={booking.id} timeZone={selectedTimeZone} />
+              <BookingItem booking={booking} availableSlots={availableSlots} currentUser={currentUser} key={booking.id} timeZone={timeZone} />
             ))
           ) : (
             <p className="rounded-md border border-[var(--line)] bg-[var(--surface-strong)] px-3 py-3 text-sm text-[var(--muted)]">
@@ -81,7 +81,7 @@ export function MyBookings({ bookings, availableSlots, timeZone, currentUser }: 
               archivedBookings.map((booking) => (
                 <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-[var(--line)] px-3 py-2 text-sm" key={booking.id}>
                   <div>
-                    <p className="font-medium text-white">{formatBookingDate(booking, selectedTimeZone)}</p>
+                    <p className="font-medium text-white">{formatBookingDate(booking, timeZone)}</p>
                     <p className="mt-1 text-xs text-[var(--muted)]">{formatBookingType(booking)}</p>
                   </div>
                   <p className="rounded-full border border-white/[0.08] px-2 py-1 text-xs text-[var(--muted)]">
@@ -118,6 +118,7 @@ function BookingItem({
   const [isRescheduleOpen, setIsRescheduleOpen] = useState(false);
   const startsAt = new Date(booking.startsAt);
   const canChange = startsAt > new Date();
+  const timeZoneLabel = supportedTimeZones.find((zone) => zone.value === timeZone)?.label ?? timeZone;
 
   return (
     <article className="rounded-md border border-[var(--line)] bg-[linear-gradient(135deg,rgba(232,197,122,0.055),rgba(255,255,255,0.025)_42%,rgba(0,0,0,0.12))] px-4 py-4 sm:px-5">
@@ -127,7 +128,7 @@ function BookingItem({
             {formatBookingType(booking)}
           </span>
           <p className="mt-4 text-xl font-semibold text-white">{formatDateTime(startsAt, timeZone)}</p>
-          <p className="mt-2 text-sm text-[var(--muted)]">{booking.type === "SESSION" ? "Длительность сессии - 90 минут" : "Длительность диагностики - 50 минут"}</p>
+          <p className="mt-2 text-sm text-[var(--muted)]">{booking.type === "SESSION" ? "Продолжительность сессии - 90 минут" : "Продолжительность диагностики - 60 минут"}</p>
         </div>
 
         {canChange ? (
@@ -145,6 +146,7 @@ function BookingItem({
               </p>
               <BookingCalendar
                 currentUser={currentUser}
+                bookingType={booking.type === "SESSION" ? "SESSION" : "DIAGNOSTIC"}
                 rescheduleBookingId={booking.id}
                 role="USER"
                 slots={availableSlots}
@@ -174,6 +176,7 @@ function BookingItem({
           onSecondary={() => setIsCancelConfirmOpen(false)}
           primaryLabel="Перенести запись"
           secondaryLabel="Отменить запись"
+          secondaryFirst
           secondarySubmits
           title="Отменить эту запись?"
         >
@@ -182,14 +185,14 @@ function BookingItem({
               <p className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">Запись</p>
               <p className="mt-1 text-lg font-semibold text-white">{formatDateTime(startsAt, timeZone)}</p>
             </div>
-            <div className="grid gap-2 border-t border-[var(--line)] pt-3 text-[var(--muted)] sm:grid-cols-2">
+            <div className="grid gap-2 border-t border-[var(--line)] pt-3 text-[var(--muted)]">
               <p>
-                <span className="text-white/72">Формат:</span> {formatBookingType(booking)}
-              </p>
-              <p>
-                <span className="text-white/72">Длительность:</span> {booking.type === "SESSION" ? "90 минут" : "50 минут"}
+                {formatBookingType(booking)} <span className="text-white/36">·</span> {booking.type === "SESSION" ? "90 минут" : "60 минут"}
               </p>
             </div>
+            <p className="border-t border-[var(--line)] pt-3 text-xs leading-5 text-[var(--muted)]/80">
+              Время указано для {formatTimeZoneInlineLabel(timeZoneLabel)}
+            </p>
           </div>
         </ConfirmDialog>
       ) : null}
@@ -210,4 +213,8 @@ function formatBookingDate(booking: BookingSummary, timeZone: string) {
   const endsAt = new Date(booking.endsAt);
 
   return `${formatDateTime(startsAt, timeZone)}, ${formatTimeRange(startsAt, endsAt, timeZone)}`;
+}
+
+function formatTimeZoneInlineLabel(label: string) {
+  return label.replace(/^GMT([+-]\d+)\s+/, "GMT$1: ");
 }

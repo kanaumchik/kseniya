@@ -21,6 +21,7 @@ type ConfirmDialogProps = {
   onPrimaryClick?: () => void;
   onSecondary: () => void;
   secondarySubmits?: boolean;
+  secondaryFirst?: boolean;
 };
 
 export function ConfirmDialog({
@@ -37,6 +38,7 @@ export function ConfirmDialog({
   onPrimaryClick,
   onSecondary,
   secondarySubmits = false,
+  secondaryFirst = false,
 }: ConfirmDialogProps) {
   useEffect(() => {
     function closeOnEscape(event: KeyboardEvent) {
@@ -62,16 +64,18 @@ export function ConfirmDialog({
       disabled={primaryDisabled}
       form={primaryForm}
       onClick={onPrimaryClick}
-      type={!onPrimaryClick && (action || primaryForm) ? "submit" : "button"}
+      type={primaryForm || (!onPrimaryClick && action) ? "submit" : "button"}
     >
       {primaryLabel}
     </button>
   );
   const secondaryButton = (
-    <button className="secondary-button min-h-12 w-full px-5 py-3 text-sm" type={secondarySubmits ? "submit" : "button"} onClick={secondarySubmits ? undefined : onSecondary}>
+    <button className="secondary-button min-h-10 w-full px-4 py-2.5 text-sm" type={secondarySubmits ? "submit" : "button"} onClick={secondarySubmits ? undefined : onSecondary}>
       {secondaryLabel}
     </button>
   );
+  const buttons = secondaryFirst ? [secondaryButton, primaryButton] : [primaryButton, secondaryButton];
+  const buttonGridClassName = secondaryFirst ? "mt-5 grid gap-3 sm:grid-cols-[0.9fr_1.2fr]" : "mt-5 grid gap-3 sm:grid-cols-[1.2fr_1fr]";
 
   return (
     <div
@@ -96,17 +100,15 @@ export function ConfirmDialog({
           {children ? <div className="mt-5 rounded-md border border-[var(--line)] bg-black/25 p-4">{children}</div> : null}
 
           {action ? (
-            <form action={action} className="mt-5 grid gap-3 sm:grid-cols-[1.2fr_1fr]">
+            <form action={action} className={buttonGridClassName}>
               {hiddenFields.map((field) => (
                 <input key={field.name} name={field.name} type="hidden" value={field.value ?? ""} />
               ))}
-              {primaryButton}
-              {secondaryButton}
+              {buttons}
             </form>
           ) : (
-            <div className="mt-5 grid gap-3 sm:grid-cols-[1.2fr_1fr]">
-              {primaryButton}
-              {secondaryButton}
+            <div className={buttonGridClassName}>
+              {buttons}
             </div>
           )}
         </div>

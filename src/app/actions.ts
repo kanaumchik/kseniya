@@ -10,6 +10,7 @@ import { hashPassword, verifyPassword } from "@/lib/password";
 import { prisma } from "@/lib/prisma";
 import {
   allowedSlotDurations,
+  bookingDurations,
   getActiveSlotConflict,
   isGeneratedSlot,
   isWithinUserBookingWindow,
@@ -126,10 +127,10 @@ export async function createBookingAction(formData: FormData) {
 
   const bookingType = normalizeBookingType(String(formData.get("type") ?? "DIAGNOSTIC"));
   const selectedSlot = parseSlotDates(formData);
-  await ensureUserSlotCanBeBooked(selectedSlot.startsAt, selectedSlot.endsAt);
   const startsAt = selectedSlot.startsAt;
   const endsAt = getBookingEnd(startsAt, bookingType);
-  const clientTimeZone = normalizeTimeZone(String(formData.get("timeZone") ?? session.user.timeZone));
+  await ensureUserSlotCanBeBooked(startsAt, endsAt);
+  const clientTimeZone = await getClientTimeZone(session.user.id, formData.get("timeZone"), session.user.timeZone);
 
   await prisma.booking.create({
     data: {
@@ -165,7 +166,7 @@ export async function adminCreateBookingAction(formData: FormData) {
     throw new Error("Нельзя записывать пользователя на прошедшее время.");
   }
 
-  await ensureSlotCanBeBooked(selectedSlot.startsAt, selectedSlot.endsAt, undefined, { admin: true });
+  await ensureSlotCanBeBooked(startsAt, endsAt, undefined, { admin: true });
   const fullDurationConflict = await getActiveSlotConflict(startsAt, endsAt);
 
   if (fullDurationConflict) {
@@ -237,7 +238,7 @@ export async function rescheduleBookingAction(formData: FormData) {
 
   const bookingId = String(formData.get("bookingId") ?? "");
   const selectedSlot = parseSlotDates(formData);
-  const clientTimeZone = normalizeTimeZone(String(formData.get("timeZone") ?? session.user.timeZone));
+  const clientTimeZone = await getClientTimeZone(session.user.id, formData.get("timeZone"), session.user.timeZone);
 
   const booking = await prisma.booking.findFirst({
     where: {
@@ -260,9 +261,9 @@ export async function rescheduleBookingAction(formData: FormData) {
   }
 
   if (session.user.role === "ADMIN") {
-    await ensureSlotCanBeBooked(selectedSlot.startsAt, selectedSlot.endsAt, booking.id, { admin: true });
+    await ensureSlotCanBeBooked(startsAt, endsAt, booking.id, { admin: true });
   } else {
-    await ensureUserSlotCanBeBooked(selectedSlot.startsAt, selectedSlot.endsAt, booking.id);
+    await ensureUserSlotCanBeBooked(startsAt, endsAt, booking.id);
   }
 
   const fullDurationConflict = await getActiveSlotConflict(startsAt, endsAt, booking.id);
@@ -376,7 +377,7 @@ export async function updateProfileAction(_previousState: string | undefined, fo
   revalidatePath("/");
   revalidatePath("/dashboard");
 
-  return "Профиль сохранён.";
+  return "Изменения сохранены";
 }
 
 export async function hideSlotAction(formData: FormData) {
@@ -523,7 +524,7 @@ export async function updateDayDurationAction(formData: FormData) {
   }
 
   if (!allowedSlotDurations.includes(durationMinutes as (typeof allowedSlotDurations)[number])) {
-    throw new Error("Некорректная длительность диагностики.");
+    throw new Error("Некорректная продолжительность диагностики.");
   }
 
   await prisma.daySchedule.upsert({
@@ -661,7 +662,7 @@ function normalizeBookingType(value: string) {
 }
 
 function getBookingEnd(startsAt: Date, type: string) {
-  return addMinutes(startsAt, type === "SESSION" ? 90 : 50);
+  return addMinutes(startsAt, type === "SESSION" ? bookingDurations.SESSION : bookingDurations.DIAGNOSTIC);
 }
 
 async function getDayOffConflictDateKeys(dateKeys: string[]) {
@@ -690,6 +691,19 @@ async function getDayOffConflictDateKeys(dateKeys: string[]) {
 
 function normalizeTimeZone(value: string) {
   return supportedTimeZones.some((timeZone) => timeZone.value === value) ? value : psychologistTimeZone;
+}
+
+async function getClientTimeZone(userId: string, value: FormDataEntryValue | null, fallback: string) {
+  if (typeof value === "string" && value) {
+    return normalizeTimeZone(value);
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { timeZone: true },
+  });
+
+  return normalizeTimeZone(user?.timeZone ?? fallback);
 }
 
 async function saveProfilePhoto(userId: string, file: File) {

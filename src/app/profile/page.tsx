@@ -49,7 +49,10 @@ export default async function ProfilePage() {
         </Link>
       </div>
 
-      <ProfileForm user={user} />
+      <ProfileForm
+        key={[user.name, user.email, user.gender, user.birthDate, user.city, user.phone, user.timeZone, user.photoPath].join("|")}
+        user={user}
+      />
     </main>
   );
 }

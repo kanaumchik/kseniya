@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useActionState, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { updateProfileAction } from "@/app/actions";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { supportedTimeZones } from "@/lib/time";
@@ -21,6 +22,7 @@ type ProfileFormProps = {
 };
 
 export function ProfileForm({ user }: ProfileFormProps) {
+  const router = useRouter();
   const [message, formAction, isPending] = useActionState(updateProfileAction, undefined);
   const [firstName, lastName] = splitFullName(user.name);
   const phoneParts = splitPhone(user.phone);
@@ -35,6 +37,12 @@ export function ProfileForm({ user }: ProfileFormProps) {
   const profileTitle = [firstName, lastName].filter(Boolean).join(" ") || "Профиль";
   const currentPhoto = photoPreview ?? user.photoPath;
   const calendarValue = useMemo(() => toDateInputValue(birthDate), [birthDate]);
+
+  useEffect(() => {
+    if (message === "Изменения сохранены") {
+      router.refresh();
+    }
+  }, [message, router]);
 
   return (
     <>
@@ -211,7 +219,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
           primaryDisabled={isPending}
           primaryForm={formId}
           primaryLabel={isPending ? "Сохраняем..." : "Сохранить изменения"}
-          secondaryLabel="Вернуться к форме"
+          secondaryLabel="Выбрать другое время"
           title="Сохранить изменения?"
         >
           <div className="grid gap-2 text-sm text-[var(--muted)]">
