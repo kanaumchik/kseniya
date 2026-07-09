@@ -256,9 +256,9 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
         <div className="relative z-10 mx-auto grid min-h-[520px] max-w-7xl grid-cols-1 items-stretch sm:min-h-[640px]">
           <div className="flex max-w-[60rem] flex-col justify-end px-4 pb-10 pt-20 sm:justify-center sm:px-10 sm:py-14 lg:mt-12 lg:py-20 lg:pl-20">
             <h1 className="max-w-[18rem] font-serif text-[1.74rem] leading-[0.95] text-[var(--gold-light)] uppercase sm:max-w-full sm:text-[3.75rem] lg:text-[4.05rem]">
-              <span className="block text-[1.48rem] leading-[1.05] sm:inline sm:text-[3.1rem] lg:text-[3.3rem]">Верни свою силу,</span>
-              <span className="block text-[1.48rem] leading-[1.05] sm:inline sm:text-[3.1rem] lg:text-[3.3rem]">раскрой потенциал</span>
-              <span style={{ fontFamily: "var(--font-great-vibes)" }} className="block text-[0.98rem] leading-[1.25] sm:text-3xl lg:text-[3.2rem] normal-case">
+              <span className="block text-[1.48rem] leading-[1.05] sm:block sm:text-[3.1rem] lg:text-[3.3rem]">Верни свою силу,</span>
+              <span className="block text-[1.48rem] leading-[1.05] sm:block sm:text-[3.1rem] lg:text-[3.3rem]">раскрой потенциал</span>
+              <span style={{ fontFamily: "var(--font-great-vibes)" }} className="block text-[1.05rem] leading-[1.28] sm:text-3xl lg:text-[3.2rem] normal-case">
                 и познакомься с собой новым
               </span>
             </h1>
