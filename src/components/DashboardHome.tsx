@@ -27,10 +27,10 @@ type DashboardHomeProps = {
 
 const navItems = [
   { href: "#project", label: "О проекте" },
-  { href: "#sessions", label: "Сессии и сопровождение" },
   { href: "#about", label: "Обо мне" },
-  { href: "#faq", label: "FAQ" },
   { href: "#diagnostic", label: "Диагностика" },
+  { href: "#sessions", label: "Сессии и сопровождение" },
+  { href: "#faq", label: "FAQ" },
 ];
 
 const footerLegalLinks = [
@@ -159,11 +159,15 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
         />
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,5,5,0.5)_0%,rgba(5,5,5,0.42)_24%,rgba(5,5,5,0.22)_52%,rgba(5,5,5,0.02)_100%),linear-gradient(0deg,#050505_0%,rgba(5,5,5,0.06)_24%,rgba(5,5,5,0)_58%)]" />
         <div className="relative z-10 mx-auto grid min-h-[640px] max-w-7xl grid-cols-1 items-stretch">
-          <div className="flex max-w-[47rem] flex-col justify-center px-6 py-14 sm:px-10 lg:-mt-8 lg:py-20 lg:pl-20">
-            <h1 className="max-w-[44rem] font-serif text-[2.55rem] leading-[1.07] text-[var(--gold-light)] sm:text-[3.75rem] lg:text-[4.05rem]">
-              Верни свою силу, раскрой потенциал и познакомься с собой новым
+          <div className="flex max-w-[60rem] flex-col justify-center px-6 py-14 sm:px-10 lg:mt-12 lg:py-20 lg:pl-20">
+            <h1 className="max-w-full font-serif text-[2.55rem] leading-[0.85] text-[var(--gold-light)] sm:text-[3.75rem] lg:text-[4.05rem] uppercase">
+              <span className="text-[2.1rem] sm:text-[3.1rem] lg:text-[3.3rem]">Верни свою силу,<br />раскрой потенциал</span>
+              <br />
+              <span style={{ fontFamily: "var(--font-great-vibes)" }} className="text-2xl sm:text-3xl lg:text-[3.2rem] normal-case">
+                и познакомься с собой новым
+              </span>
             </h1>
-            <p className="mt-6 max-w-[42rem] text-lg leading-8 text-white/78 sm:text-xl">
+            <p className="mt-14 max-w-[42rem] text-lg leading-8 text-white/78 sm:text-xl">
               Пространство для поддержки, трансформации
               <br />
               и переосмысления опыта с системным подходом и глубиной
@@ -175,11 +179,11 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
         </div>
       </section>
 
-      <section className="section-shell grid gap-7" id="project">
-        <div className="max-w-4xl">
+      <section className="section-shell project-section grid gap-8" id="project">
+        <div className="max-w-[840px]">
           <h2 className="font-serif text-3xl text-[var(--gold-light)] sm:text-4xl">О проекте</h2>
         </div>
-        <div className="grid max-w-5xl gap-5 text-base leading-8 text-white/72">
+        <div className="project-copy">
           <p>Этот проект родился как пространство для поддержки, трансформации и переосмысления опыта.</p>
           <p>
             Сюда можно прийти в период кризиса, перемен, внутреннего поиска или усталости от повторяющихся сценариев -
@@ -208,11 +212,15 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
         </div>
       </section>
 
-      <section className="section-shell grid gap-7 border-t border-[var(--line)]" id="diagnostic">
-        <div className="max-w-4xl">
+      <section className="section-shell diagnostic-section grid gap-7 border-t border-[var(--line)]" id="diagnostic">
+        <div className="diagnostic-header">
           <h2 className="font-serif text-3xl text-[var(--gold-light)] sm:text-4xl">Диагностика</h2>
+          <div className="diagnostic-meta" aria-label="Параметры диагностики">
+            <span>Формат: Диагностика</span>
+            <span>60 минут</span>
+          </div>
         </div>
-        <div className="grid max-w-5xl gap-5 text-base leading-8 text-white/72">
+        <div className="diagnostic-copy">
           <p>
             Диагностика - это первая встреча, на которой мы разбираем вашу текущую ситуацию и смотрим, что на самом деле
             происходит глубже.
@@ -240,6 +248,7 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
             изменениям не из хаоса, а из ясности. Берите эту возможность для себя.
           </p>
         </div>
+        <div className="diagnostic-actions">{renderBookingCta("Записаться на диагностику", "DIAGNOSTIC")}</div>
       </section>
 
       <section className="section-shell grid gap-10" id="sessions">
