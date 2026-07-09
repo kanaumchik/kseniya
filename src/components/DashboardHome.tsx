@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
@@ -252,14 +251,11 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
       </div>
 
       <section className="relative min-h-[540px] overflow-hidden border-b border-[var(--line)] sm:min-h-[640px]">
-        <Image
-          alt="Психолог в тёмном интерьере"
-          className="hero-image object-cover object-[80%_top] sm:object-center"
-          fill
-          priority
-          sizes="100vw"
-          src="/images/background_3000x1024.jpg"
-        />
+        <picture className="absolute inset-0 block h-full w-full">
+          <source media="(max-width: 767px)" srcSet="/images/hero-psychologist.png" />
+          <source media="(min-width: 768px)" srcSet="/images/background_3000x1024.jpg" />
+          <img alt="Психолог в тёмном интерьере" className="hero-visual h-full w-full" src="/images/background_3000x1024.jpg" />
+        </picture>
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,5,5,0.5)_0%,rgba(5,5,5,0.42)_24%,rgba(5,5,5,0.22)_52%,rgba(5,5,5,0.02)_100%),linear-gradient(0deg,#050505_0%,rgba(5,5,5,0.06)_24%,rgba(5,5,5,0)_58%)]" />
         <div className="relative z-10 mx-auto grid min-h-[640px] max-w-7xl grid-cols-1 items-stretch">
           <div className="flex max-w-[60rem] flex-col justify-center px-4 py-10 sm:px-10 sm:py-14 lg:mt-12 lg:py-20 lg:pl-20">

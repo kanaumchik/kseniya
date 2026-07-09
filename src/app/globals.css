@@ -566,12 +566,14 @@ select option {
   text-transform: uppercase;
 }
 
-@media (min-width: 1024px) {
-  .hero-image {
-    inset: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    object-position: right top;
+.hero-visual {
+  object-fit: cover;
+  object-position: right top;
+}
+
+@media (max-width: 767px) {
+  .hero-visual {
+    object-position: 76% 14%;
   }
 }
 
