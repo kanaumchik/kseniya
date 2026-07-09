@@ -151,11 +151,11 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
     <main className="min-h-screen bg-[var(--background)] pb-24 text-white lg:pb-0">
       <header className="sticky top-0 z-40 border-b border-white/[0.08] bg-[#050505]/90 backdrop-blur-xl">
         <div className="mx-auto flex max-w-[96rem] items-center justify-between gap-6 px-5 py-3.5 lg:px-8">
-          <Link href="/" className="min-w-0 shrink-0 max-w-[11.5rem] leading-none sm:max-w-none">
-            <p className="whitespace-normal font-serif text-base uppercase leading-[1.05] text-[var(--gold-light)] sm:whitespace-nowrap sm:text-xl">
+          <Link href="/" className="min-w-0 shrink-0 max-w-[13.5rem] leading-none sm:max-w-none">
+            <p className="whitespace-nowrap font-serif text-[0.9rem] uppercase leading-[1.1] text-[var(--gold-light)] sm:text-xl sm:whitespace-nowrap">
               Ксения Наумчик
             </p>
-            <p className="mt-1 max-w-[11rem] text-[0.56rem] uppercase leading-[1.2] text-[var(--muted)] sm:max-w-none sm:text-[0.62rem]">
+            <p className="mt-1 max-w-[12rem] text-[0.52rem] uppercase leading-[1.1] text-[var(--muted)] sm:max-w-none sm:text-[0.62rem]">
               Автор трансформационных программ
             </p>
           </Link>
