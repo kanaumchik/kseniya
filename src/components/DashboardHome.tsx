@@ -262,9 +262,18 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
               </span>
             </h1>
             <p className="mt-6 max-w-[18.5rem] text-[0.92rem] leading-[1.5] text-white/78 sm:mt-14 sm:max-w-[42rem] sm:text-xl sm:leading-8">
-              Пространство для поддержки, трансформации
-              <br />
-              и переосмысления опыта с системным подходом и глубиной
+              <span className="sm:hidden">
+                Пространство для поддержки,
+                <br />
+                трансформации и переосмысления
+                <br />
+                опыта с системным подходом и глубиной
+              </span>
+              <span className="hidden sm:inline">
+                Пространство для поддержки, трансформации
+                <br />
+                и переосмысления опыта с системным подходом и глубиной
+              </span>
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-3 sm:mt-11 sm:gap-4">
               {renderBookingCta()}
