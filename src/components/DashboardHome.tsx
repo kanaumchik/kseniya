@@ -252,7 +252,6 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
           <img alt="Психолог в тёмном интерьере" className="hero-visual h-full w-full" src="/images/background_3000x1024.jpg" />
         </picture>
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,5,5,0.5)_0%,rgba(5,5,5,0.42)_24%,rgba(5,5,5,0.22)_52%,rgba(5,5,5,0.02)_100%),linear-gradient(0deg,#050505_0%,rgba(5,5,5,0.06)_24%,rgba(5,5,5,0)_58%)]" />
-        <div className="absolute inset-0 sm:hidden bg-[linear-gradient(180deg,rgba(5,5,5,0.12)_0%,rgba(5,5,5,0.26)_42%,rgba(5,5,5,0.78)_100%),linear-gradient(90deg,rgba(5,5,5,0.58)_0%,rgba(5,5,5,0.24)_38%,rgba(5,5,5,0)_72%)]" />
         <div className="relative z-10 mx-auto grid min-h-[520px] max-w-7xl grid-cols-1 items-stretch sm:min-h-[640px]">
           <div className="flex max-w-[60rem] flex-col justify-end px-4 pb-10 pt-20 sm:justify-center sm:px-10 sm:py-14 lg:mt-12 lg:py-20 lg:pl-20">
             <h1 className="max-w-[18rem] font-serif text-[1.74rem] leading-[0.95] text-[var(--gold-light)] uppercase sm:max-w-full sm:text-[3.75rem] lg:text-[4.05rem]">
