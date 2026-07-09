@@ -8,7 +8,7 @@ import { AuthError } from "next-auth";
 import { auth, signIn, signOut } from "@/auth";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import { prisma } from "@/lib/prisma";
-import { canonicalHomeUrl } from "@/lib/site-url";
+import { getAppHomeUrl } from "@/lib/site-url";
 import {
   allowedSlotDurations,
   bookingDurations,
@@ -23,7 +23,7 @@ export async function loginAction(_previousState: string | undefined, formData: 
     await signIn("credentials", {
       email: formData.get("email"),
       password: formData.get("password"),
-      redirectTo: canonicalHomeUrl,
+      redirectTo: getAppHomeUrl(),
     });
   } catch (error) {
     if (error instanceof AuthError) {
@@ -35,7 +35,7 @@ export async function loginAction(_previousState: string | undefined, formData: 
 }
 
 export async function logoutAction() {
-  await signOut({ redirectTo: canonicalHomeUrl });
+  await signOut({ redirectTo: getAppHomeUrl() });
 }
 
 export async function registerAction(_previousState: string | undefined, formData: FormData) {
@@ -107,7 +107,7 @@ export async function registerAction(_previousState: string | undefined, formDat
     await signIn("credentials", {
       email,
       password,
-      redirectTo: canonicalHomeUrl,
+      redirectTo: getAppHomeUrl(),
     });
   } catch (error) {
     if (error instanceof AuthError) {

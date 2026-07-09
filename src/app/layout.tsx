@@ -17,8 +17,8 @@ const greatVibes = Great_Vibes({
 });
 
 export const metadata: Metadata = {
-  title: "Ксения Наумчик | Автор трансформационных программ",
-  description: "Локальный сайт записи на индивидуальную диагностику.",
+  title: "Ксения Наумчик | Автор",
+  description: "Автор трансформационных программ",
 };
 
 export default function RootLayout({

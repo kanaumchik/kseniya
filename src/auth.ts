@@ -2,7 +2,7 @@ import NextAuth, { type DefaultSession } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/password";
-import { canonicalOrigin, legacyHost } from "@/lib/site-url";
+import { canonicalOrigin, getAppOrigin, legacyHost } from "@/lib/site-url";
 
 declare module "next-auth" {
   interface Session {
@@ -26,7 +26,7 @@ declare module "@auth/core/jwt" {
   }
 }
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+const nextAuth = NextAuth({
   session: { strategy: "jwt" },
   secret: process.env.AUTH_SECRET ?? "local-development-auth-secret-change-before-production",
   pages: {
@@ -65,8 +65,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    redirect({ url }) {
-      const redirectUrl = url.startsWith("/") ? new URL(url, canonicalOrigin) : new URL(url);
+    redirect({ url, baseUrl }) {
+      const appOrigin = baseUrl || getAppOrigin();
+      const redirectUrl = url.startsWith("/") ? new URL(url, appOrigin) : new URL(url);
 
       if (redirectUrl.hostname === legacyHost) {
         redirectUrl.protocol = "http:";
@@ -75,11 +76,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         return redirectUrl.toString();
       }
 
-      if (redirectUrl.origin === canonicalOrigin) {
+      if (redirectUrl.origin === appOrigin || redirectUrl.origin === canonicalOrigin) {
         return redirectUrl.toString();
       }
 
-      return canonicalOrigin;
+      return appOrigin;
     },
     jwt({ token, user }) {
       if (user) {
@@ -100,3 +101,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
 });
+
+export const { handlers, signIn, signOut } = nextAuth;
+
+export async function auth() {
+  try {
+    return await nextAuth.auth();
+  } catch (error) {
+    if (isJwtSessionError(error)) {
+      console.warn("[auth] Ignoring invalid JWT session cookie. Clear local auth cookies if this repeats.");
+      return null;
+    }
+
+    throw error;
+  }
+}
+
+function isJwtSessionError(error: unknown) {
+  return (
+    error instanceof Error &&
+    (error.name === "JWTSessionError" || error.message.includes("JWTSessionError") || error.message.includes("jwt_session_error"))
+  );
+}
