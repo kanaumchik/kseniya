@@ -240,38 +240,34 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
                 <AuthModal triggerClassName="w-full" triggerLabel="Войти" />
               )}
 
-              <div className="pt-2">{renderBookingCta("Записаться на диагностику", "DIAGNOSTIC", undefined, "w-full")}</div>
             </div>
           </div>
         </div>
       ) : null}
 
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.08] bg-[#050505]/96 px-4 py-3 backdrop-blur-lg lg:hidden">
-        <div className="mx-auto max-w-xl">{renderBookingCta("Записаться на диагностику", "DIAGNOSTIC", undefined, "w-full")}</div>
-      </div>
-
-      <section className="relative min-h-[540px] overflow-hidden border-b border-[var(--line)] sm:min-h-[640px]">
+      <section className="relative min-h-[520px] overflow-hidden border-b border-[var(--line)] sm:min-h-[640px]">
         <picture className="absolute inset-0 block h-full w-full">
           <source media="(max-width: 767px)" srcSet="/images/hero-psychologist.png" />
           <source media="(min-width: 768px)" srcSet="/images/background_3000x1024.jpg" />
           <img alt="Психолог в тёмном интерьере" className="hero-visual h-full w-full" src="/images/background_3000x1024.jpg" />
         </picture>
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,5,5,0.5)_0%,rgba(5,5,5,0.42)_24%,rgba(5,5,5,0.22)_52%,rgba(5,5,5,0.02)_100%),linear-gradient(0deg,#050505_0%,rgba(5,5,5,0.06)_24%,rgba(5,5,5,0)_58%)]" />
-        <div className="relative z-10 mx-auto grid min-h-[640px] max-w-7xl grid-cols-1 items-stretch">
-          <div className="flex max-w-[60rem] flex-col justify-center px-4 py-10 sm:px-10 sm:py-14 lg:mt-12 lg:py-20 lg:pl-20">
-            <h1 className="max-w-full font-serif text-[2.05rem] leading-[0.92] text-[var(--gold-light)] sm:text-[3.75rem] lg:text-[4.05rem] uppercase">
-              <span className="text-[1.72rem] sm:text-[3.1rem] lg:text-[3.3rem]">Верни свою силу,<br />раскрой потенциал</span>
-              <br />
-              <span style={{ fontFamily: "var(--font-great-vibes)" }} className="text-[1.3rem] sm:text-3xl lg:text-[3.2rem] normal-case">
+        <div className="absolute inset-0 sm:hidden bg-[linear-gradient(180deg,rgba(5,5,5,0.12)_0%,rgba(5,5,5,0.26)_42%,rgba(5,5,5,0.78)_100%),linear-gradient(90deg,rgba(5,5,5,0.58)_0%,rgba(5,5,5,0.24)_38%,rgba(5,5,5,0)_72%)]" />
+        <div className="relative z-10 mx-auto grid min-h-[520px] max-w-7xl grid-cols-1 items-stretch sm:min-h-[640px]">
+          <div className="flex max-w-[60rem] flex-col justify-end px-4 pb-10 pt-20 sm:justify-center sm:px-10 sm:py-14 lg:mt-12 lg:py-20 lg:pl-20">
+            <h1 className="max-w-[18rem] font-serif text-[1.74rem] leading-[0.95] text-[var(--gold-light)] uppercase sm:max-w-full sm:text-[3.75rem] lg:text-[4.05rem]">
+              <span className="block text-[1.48rem] leading-[1.05] sm:inline sm:text-[3.1rem] lg:text-[3.3rem]">Верни свою силу,</span>
+              <span className="block text-[1.48rem] leading-[1.05] sm:inline sm:text-[3.1rem] lg:text-[3.3rem]">раскрой потенциал</span>
+              <span style={{ fontFamily: "var(--font-great-vibes)" }} className="block text-[0.98rem] leading-[1.25] sm:text-3xl lg:text-[3.2rem] normal-case">
                 и познакомься с собой новым
               </span>
             </h1>
-            <p className="mt-8 max-w-[42rem] text-base leading-7 text-white/78 sm:mt-14 sm:text-xl sm:leading-8">
+            <p className="mt-6 max-w-[18.5rem] text-[0.92rem] leading-[1.5] text-white/78 sm:mt-14 sm:max-w-[42rem] sm:text-xl sm:leading-8">
               Пространство для поддержки, трансформации
               <br />
               и переосмысления опыта с системным подходом и глубиной
             </p>
-            <div className="mt-8 flex flex-wrap items-center gap-3 sm:mt-11 sm:gap-4">
+            <div className="mt-6 flex flex-wrap items-center gap-3 sm:mt-11 sm:gap-4">
               {renderBookingCta()}
             </div>
           </div>
