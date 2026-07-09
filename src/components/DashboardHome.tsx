@@ -155,7 +155,7 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
           fill
           priority
           sizes="100vw"
-          src="/images/xeniia-naumchik-hero.png"
+          src="/images/background_3000x1024.jpg"
         />
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,5,5,0.5)_0%,rgba(5,5,5,0.42)_24%,rgba(5,5,5,0.22)_52%,rgba(5,5,5,0.02)_100%),linear-gradient(0deg,#050505_0%,rgba(5,5,5,0.06)_24%,rgba(5,5,5,0)_58%)]" />
         <div className="relative z-10 mx-auto grid min-h-[640px] max-w-7xl grid-cols-1 items-stretch">

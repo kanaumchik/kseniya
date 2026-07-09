@@ -381,11 +381,10 @@ select option {
 
 @media (min-width: 1024px) {
   .hero-image {
-    left: auto !important;
-    right: -4vw !important;
-    width: min(72vw, 1180px) !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
     object-position: right top;
-    transform: translateY(32px);
   }
 }
 
