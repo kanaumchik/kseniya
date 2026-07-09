@@ -90,7 +90,7 @@ export function MyBookings({ bookings, availableSlots, timeZone, currentUser }: 
                 </div>
               ))
             ) : (
-              <p className="text-sm text-[var(--muted)]">Здесь пока пусто.</p>
+              <p className="text-sm text-[var(--muted)]">Здесь пока пусто</p>
             )}
           </div>
         </details>
