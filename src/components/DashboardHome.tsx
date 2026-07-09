@@ -1,6 +1,9 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { AuthModal } from "@/components/AuthModal";
 import { BookingCalendar } from "@/components/BookingCalendar";
 import { BookingModal } from "@/components/BookingModal";
@@ -96,8 +99,34 @@ const faqItems = [
 
 export function DashboardHome({ id, name, email, role, timeZone, slots, users }: DashboardHomeProps) {
   const currentUser = id && name && email ? { id, name, email } : undefined;
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  function renderBookingCta(label = "Записаться на диагностику", type: "DIAGNOSTIC" | "SESSION" = "DIAGNOSTIC", packageTitle?: string) {
+  useEffect(() => {
+    if (!isMobileMenuOpen) {
+      return;
+    }
+
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsMobileMenuOpen(false);
+      }
+    }
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", closeOnEscape);
+
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [isMobileMenuOpen]);
+
+  function renderBookingCta(
+    label = "Записаться на диагностику",
+    type: "DIAGNOSTIC" | "SESSION" = "DIAGNOSTIC",
+    packageTitle?: string,
+    buttonClassName?: string,
+  ) {
     if (!role) {
       return <AuthModal triggerLabel={label} variant="hero" />;
     }
@@ -113,19 +142,21 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
     }
 
     return (
-      <BookingModal buttonLabel={label} title={type === "SESSION" ? "Запись на сессию" : "Запись на диагностику"}>
+      <BookingModal buttonClassName={buttonClassName} buttonLabel={label} title={type === "SESSION" ? "Запись на сессию" : "Запись на диагностику"}>
         <BookingCalendar bookingType={type} currentUser={currentUser} packageTitle={packageTitle} role={role} slots={slots} timeZone={timeZone} users={users} />
       </BookingModal>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[var(--background)] text-white">
+    <main className="min-h-screen bg-[var(--background)] pb-24 text-white lg:pb-0">
       <header className="sticky top-0 z-40 border-b border-white/[0.08] bg-[#050505]/90 backdrop-blur-xl">
         <div className="mx-auto flex max-w-[96rem] items-center justify-between gap-6 px-5 py-3.5 lg:px-8">
-          <Link href="/" className="min-w-[17rem] shrink-0 leading-none">
-            <p className="whitespace-nowrap font-serif text-lg uppercase text-[var(--gold-light)] sm:text-xl">Ксения Наумчик</p>
-            <p className="mt-1 max-w-[13rem] truncate text-[0.62rem] uppercase text-[var(--muted)] sm:max-w-none">
+          <Link href="/" className="min-w-0 shrink-0 max-w-[11.5rem] leading-none sm:max-w-none">
+            <p className="whitespace-normal font-serif text-base uppercase leading-[1.05] text-[var(--gold-light)] sm:whitespace-nowrap sm:text-xl">
+              Ксения Наумчик
+            </p>
+            <p className="mt-1 max-w-[11rem] text-[0.56rem] uppercase leading-[1.2] text-[var(--muted)] sm:max-w-none sm:text-[0.62rem]">
               Автор трансформационных программ
             </p>
           </Link>
@@ -138,20 +169,92 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
             ))}
           </nav>
 
-          <div className="flex shrink-0 items-center justify-end gap-2 sm:gap-3">
+          <div className="hidden shrink-0 items-center justify-end gap-2 sm:gap-3 2xl:flex">
             <button className="nav-link insight-nav-link hidden text-sm lg:inline-flex" type="button">
               <span aria-hidden="true">✦</span>
               <span>Получить подсказку</span>
             </button>
             {role ? <ProfileMenu name={name} role={role} /> : <AuthModal />}
           </div>
+
+          <button
+            className="icon-button inline-flex 2xl:hidden"
+            type="button"
+            aria-label={isMobileMenuOpen ? "Закрыть меню" : "Открыть меню"}
+            aria-expanded={isMobileMenuOpen}
+            onClick={() => setIsMobileMenuOpen((current) => !current)}
+          >
+            {isMobileMenuOpen ? <CloseIcon /> : <MenuIcon />}
+          </button>
         </div>
       </header>
 
-      <section className="relative min-h-[640px] overflow-hidden border-b border-[var(--line)]">
+      {isMobileMenuOpen ? (
+        <div
+          className="fixed inset-x-0 top-[4.25rem] z-50 border-b border-white/[0.08] bg-[#050505]/98 px-4 pb-5 pt-3 backdrop-blur-xl 2xl:hidden"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setIsMobileMenuOpen(false);
+            }
+          }}
+        >
+          <div className="mx-auto grid max-w-7xl gap-3">
+            <nav className="grid gap-2">
+              {navItems.map((item) => (
+                <a
+                  className="rounded-md border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-sm font-medium text-white/86 transition hover:border-[var(--gold)] hover:text-[var(--gold-light)]"
+                  href={item.href}
+                  key={item.href}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  {item.label}
+                </a>
+              ))}
+            </nav>
+
+            <div className="grid gap-2 border-t border-white/[0.08] pt-3">
+              {role ? (
+                <>
+                  <Link className="rounded-md border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-sm font-medium text-white/86 transition hover:border-[var(--gold)] hover:text-[var(--gold-light)]" href="/profile" onClick={() => setIsMobileMenuOpen(false)}>
+                    Профиль
+                  </Link>
+                  {role === "ADMIN" ? (
+                    <>
+                      <Link className="rounded-md border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-sm font-medium text-white/86 transition hover:border-[var(--gold)] hover:text-[var(--gold-light)]" href="/schedule" onClick={() => setIsMobileMenuOpen(false)}>
+                        Моё расписание
+                      </Link>
+                      <Link className="rounded-md border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-sm font-medium text-white/86 transition hover:border-[var(--gold)] hover:text-[var(--gold-light)]" href="/history" onClick={() => setIsMobileMenuOpen(false)}>
+                        История
+                      </Link>
+                      <Link className="rounded-md border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-sm font-medium text-white/86 transition hover:border-[var(--gold)] hover:text-[var(--gold-light)]" href="/clients" onClick={() => setIsMobileMenuOpen(false)}>
+                        Мои клиенты
+                      </Link>
+                    </>
+                  ) : (
+                    <Link className="rounded-md border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-sm font-medium text-white/86 transition hover:border-[var(--gold)] hover:text-[var(--gold-light)]" href="/bookings" onClick={() => setIsMobileMenuOpen(false)}>
+                      Мои записи
+                    </Link>
+                  )}
+                </>
+              ) : (
+                <AuthModal triggerClassName="w-full" triggerLabel="Войти" />
+              )}
+
+              <div className="pt-2">{renderBookingCta("Записаться на диагностику", "DIAGNOSTIC", undefined, "w-full")}</div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.08] bg-[#050505]/96 px-4 py-3 backdrop-blur-lg lg:hidden">
+        <div className="mx-auto max-w-xl">{renderBookingCta("Записаться на диагностику", "DIAGNOSTIC", undefined, "w-full")}</div>
+      </div>
+
+      <section className="relative min-h-[540px] overflow-hidden border-b border-[var(--line)] sm:min-h-[640px]">
         <Image
           alt="Психолог в тёмном интерьере"
-          className="hero-image object-cover object-center"
+          className="hero-image object-cover object-[80%_top] sm:object-center"
           fill
           priority
           sizes="100vw"
@@ -159,20 +262,20 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
         />
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,5,5,0.5)_0%,rgba(5,5,5,0.42)_24%,rgba(5,5,5,0.22)_52%,rgba(5,5,5,0.02)_100%),linear-gradient(0deg,#050505_0%,rgba(5,5,5,0.06)_24%,rgba(5,5,5,0)_58%)]" />
         <div className="relative z-10 mx-auto grid min-h-[640px] max-w-7xl grid-cols-1 items-stretch">
-          <div className="flex max-w-[60rem] flex-col justify-center px-6 py-14 sm:px-10 lg:mt-12 lg:py-20 lg:pl-20">
-            <h1 className="max-w-full font-serif text-[2.55rem] leading-[0.85] text-[var(--gold-light)] sm:text-[3.75rem] lg:text-[4.05rem] uppercase">
-              <span className="text-[2.1rem] sm:text-[3.1rem] lg:text-[3.3rem]">Верни свою силу,<br />раскрой потенциал</span>
+          <div className="flex max-w-[60rem] flex-col justify-center px-4 py-10 sm:px-10 sm:py-14 lg:mt-12 lg:py-20 lg:pl-20">
+            <h1 className="max-w-full font-serif text-[2.05rem] leading-[0.92] text-[var(--gold-light)] sm:text-[3.75rem] lg:text-[4.05rem] uppercase">
+              <span className="text-[1.72rem] sm:text-[3.1rem] lg:text-[3.3rem]">Верни свою силу,<br />раскрой потенциал</span>
               <br />
-              <span style={{ fontFamily: "var(--font-great-vibes)" }} className="text-2xl sm:text-3xl lg:text-[3.2rem] normal-case">
+              <span style={{ fontFamily: "var(--font-great-vibes)" }} className="text-[1.3rem] sm:text-3xl lg:text-[3.2rem] normal-case">
                 и познакомься с собой новым
               </span>
             </h1>
-            <p className="mt-14 max-w-[42rem] text-lg leading-8 text-white/78 sm:text-xl">
+            <p className="mt-8 max-w-[42rem] text-base leading-7 text-white/78 sm:mt-14 sm:text-xl sm:leading-8">
               Пространство для поддержки, трансформации
               <br />
               и переосмысления опыта с системным подходом и глубиной
             </p>
-            <div className="mt-11 flex flex-wrap items-center gap-4">
+            <div className="mt-8 flex flex-wrap items-center gap-3 sm:mt-11 sm:gap-4">
               {renderBookingCta()}
             </div>
           </div>
@@ -184,30 +287,24 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
           <h2 className="font-serif text-3xl text-[var(--gold-light)] sm:text-4xl">О проекте</h2>
         </div>
         <div className="project-copy">
-          <p>Этот проект родился как пространство для поддержки, трансформации и переосмысления опыта.</p>
+          <p>Проект создан для людей, которые проходят через кризис, перемены или внутренний переход и чувствуют, что за этим состоянием стоит не только трудность, но и возможность выйти на новый уровень.</p>
           <p>
-            Сюда можно прийти в период кризиса, перемен, внутреннего поиска или усталости от повторяющихся сценариев -
-            когда привычные способы больше не работают, а новое ещё не собрано. Когда внутри есть ощущение: «Я могу
-            больше. Во мне есть потенциал. Но что-то удерживает меня на месте».
+            Иногда кризис приходит как потеря опоры, профессиональный тупик, сложности в отношениях или ощущение, что вы выросли из прежней жизни, но ещё не понимаете, какой должна быть новая. Внешне всё может выглядеть привычно, но внутри уже есть понимание, что старые способы больше не работают, а новое ещё не собрано.
           </p>
           <p>
-            Я верю, что кризис - это не только точка боли. Это момент, в котором человек встречается с необходимостью
-            перестроиться: увидеть, что больше не служит жизни, найти новые опоры, вернуть контакт с собой и начать
-            действовать иначе.
+            Я вижу кризис не только как сложный период, но и как точку раскрытия потенциала. Именно в такие моменты человек встречается с тем, что давно просится наружу: с профессиональной силой, которую пора проявить; с эмоциональной зрелостью, которую важно вырастить; с духовной глубиной, которая помогает опереться не только на внешние обстоятельства, но и на внутреннюю правду.
           </p>
           <p>
-            В основе проекта - системный подход, расстановочная работа, психологическая база и поддерживающий формат
-            сопровождения. Мне важно не просто провести человека через глубокую сессию, а помочь ему выдержать процесс
-            изменений, заметить сопротивление, сохранить фокус и постепенно встроить новые осознания в жизнь.
+            В основе проекта — системный подход, сочетание глубокой расстановочной работы и бережного сопровождения. Это позволяет смотреть на запрос целостно: видеть не только внешнюю ситуацию, но и повторяющиеся сценарии, скрытые связи, сопротивление изменениям и тот потенциал, который пока остаётся заблокированным.
           </p>
           <p>
-            Здесь есть разные форматы работы: диагностика, разовые сессии, пакеты сопровождения и авторские
-            трансформационные программы. Все они созданы для того, чтобы человек мог не оставаться один на один со своим
-            запросом, а проходить путь глубже, яснее и бережнее.
+            Задача проекта — помочь человеку не просто пережить кризис, а пройти его осознанно: вернуть контакт с собой, увидеть ресурсы, раскрыть внутреннюю силу и постепенно встроить новые решения в реальную жизнь. Для этого в проекте собраны разные форматы работы: диагностика, разовые сессии, пакеты сопровождения и авторские трансформационные программы. Они отличаются глубиной, длительностью и маршрутом, поэтому можно выбрать тот формат, который нужен вам именно сейчас.
           </p>
           <p>
-            Этот проект - про внутреннюю силу, раскрытие потенциала и возможность идти дальше даже тогда, когда внешние
-            обстоятельства кажутся нестабильными.
+            На данный момент все форматы проходят в индивидуальном сопровождении. Это значит, что работа строится вокруг вашего запроса и тех процессов, которые действительно важны именно для вас сейчас. Здесь нет универсального сценария, который одинаково накладывается на всех. Есть пространство, в котором можно глубже увидеть себя, бережно пройти изменения и найти опору для следующего шага.
+          </p>
+          <p>
+            Этот проект о возвращении силы, раскрытии потенциала и возможности идти дальше не из страха, а из зрелого, честного и целостного контакта с собой.
           </p>
         </div>
       </section>
@@ -406,6 +503,22 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
         </div>
       </footer>
     </main>
+  );
+}
+
+function MenuIcon() {
+  return (
+    <svg aria-hidden="true" className="size-5" fill="none" viewBox="0 0 24 24">
+      <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+    </svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg aria-hidden="true" className="size-5" fill="none" viewBox="0 0 24 24">
+      <path d="M6 6l12 12M18 6 6 18" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+    </svg>
   );
 }
 

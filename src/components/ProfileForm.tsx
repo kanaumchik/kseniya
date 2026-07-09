@@ -33,6 +33,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
   const [isPasswordOpen, setIsPasswordOpen] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const allowSubmitRef = useRef(false);
+  const birthDateInputRef = useRef<HTMLInputElement>(null);
   const formId = "profile-form";
   const profileTitle = [firstName, lastName].filter(Boolean).join(" ") || "Профиль";
   const currentPhoto = photoPreview ?? user.photoPath;
@@ -48,7 +49,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
     <>
       <form
         action={formAction}
-        className="mx-auto grid w-full max-w-4xl gap-5 px-4 py-8"
+        className="mx-auto grid w-full max-w-4xl gap-5 px-3 py-6 sm:px-4 sm:py-8"
         encType="multipart/form-data"
         id={formId}
         onSubmit={(event) => {
@@ -62,8 +63,8 @@ export function ProfileForm({ user }: ProfileFormProps) {
           setIsConfirmOpen(false);
         }}
       >
-        <div className="rounded-md border border-[var(--line)] bg-[var(--surface)] p-5">
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+        <div className="rounded-md border border-[var(--line)] bg-[var(--surface)] p-4 sm:p-5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-5">
             <div className="relative size-24 overflow-hidden rounded-full border border-white/[0.12] bg-black/30">
               {currentPhoto ? <Image alt="Фото профиля" className="object-cover" fill src={currentPhoto} /> : null}
             </div>
@@ -87,7 +88,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
           </div>
         </div>
 
-        <div className="grid gap-4 rounded-md border border-[var(--line)] bg-[var(--surface)] p-5 md:grid-cols-2">
+        <div className="grid gap-4 rounded-md border border-[var(--line)] bg-[var(--surface)] p-4 sm:p-5 md:grid-cols-2">
           <label className="grid gap-2 text-sm font-medium text-white/86">
             Имя
             <input className="field" name="firstName" defaultValue={firstName} placeholder="Укажите Ваше имя" autoComplete="given-name" required />
@@ -112,14 +113,28 @@ export function ProfileForm({ user }: ProfileFormProps) {
           <label className="grid gap-2 text-sm font-medium text-white/86">
             Дата рождения
             <input name="birthDate" type="hidden" value={birthDate} />
-            <input
-              aria-label="Дата рождения"
-              className="field"
-              type="date"
-              value={calendarValue}
-              onChange={(event) => setBirthDate(fromDateInputValue(event.target.value))}
-              required
-            />
+            <div className="relative">
+              <input
+                aria-label="Дата рождения"
+                className="field w-full pr-14"
+                ref={birthDateInputRef}
+                type="date"
+                value={calendarValue}
+                onChange={(event) => setBirthDate(fromDateInputValue(event.target.value))}
+                required
+              />
+              <button
+                aria-label="Открыть календарь"
+                className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded border border-[rgba(216,179,90,0.22)] text-[var(--gold-light)] transition hover:border-[var(--gold)] hover:text-[var(--gold)] sm:right-3"
+                type="button"
+                onClick={() => {
+                  birthDateInputRef.current?.showPicker?.();
+                  birthDateInputRef.current?.focus();
+                }}
+              >
+                <CalendarIcon />
+              </button>
+            </div>
           </label>
 
           <label className="grid gap-2 text-sm font-medium text-white/86">
@@ -129,7 +144,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 
           <label className="grid gap-2 text-sm font-medium text-white/86">
             Телефон
-            <div className="grid grid-cols-[7rem_1fr] gap-2">
+            <div className="grid grid-cols-[6rem_1fr] gap-2 sm:grid-cols-[7rem_1fr]">
               <select className="field" name="phonePrefix" value={phonePrefix} onChange={(event) => setPhonePrefix(event.target.value)}>
                 <option value="+7">+7</option>
                 <option value="+375">+375</option>
@@ -257,6 +272,14 @@ function fromDateInputValue(value: string) {
   const [year, month, day] = value.split("-");
 
   return `${day}.${month}.${year}`;
+}
+
+function CalendarIcon() {
+  return (
+    <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+      <path d="M7 3v3M17 3v3M4.5 9.5h15M6 5h12a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+    </svg>
+  );
 }
 
 function formatPhoneInput(value: string) {

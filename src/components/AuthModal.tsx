@@ -7,9 +7,10 @@ import { loginAction, registerAction } from "@/app/actions";
 type AuthModalProps = {
   triggerLabel?: string;
   variant?: "nav" | "hero";
+  triggerClassName?: string;
 };
 
-export function AuthModal({ triggerLabel = "Войти", variant = "nav" }: AuthModalProps) {
+export function AuthModal({ triggerClassName, triggerLabel = "Войти", variant = "nav" }: AuthModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const [birthDate, setBirthDate] = useState("");
@@ -49,24 +50,33 @@ export function AuthModal({ triggerLabel = "Войти", variant = "nav" }: Auth
 
   return (
     <>
-      <button className={variant === "hero" ? "hero-gold-button" : "secondary-button px-4 py-2 text-sm"} onClick={() => setIsOpen(true)} type="button">
+      <button
+        className={[
+          variant === "hero" ? "hero-gold-button" : "secondary-button px-4 py-2 text-sm",
+          triggerClassName,
+        ]
+          .filter(Boolean)
+          .join(" ")}
+        onClick={() => setIsOpen(true)}
+        type="button"
+      >
         {triggerLabel}
       </button>
 
       {isOpen && typeof document !== "undefined" ? createPortal(
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/82 px-4 py-6 backdrop-blur-md" role="dialog" aria-modal="true">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/82 px-3 py-3 backdrop-blur-md sm:px-4 sm:py-6" role="dialog" aria-modal="true">
           <div className="relative flex max-h-[88vh] w-full max-w-xl flex-col overflow-hidden rounded-md border border-white/[0.1] bg-[#10100f] shadow-2xl shadow-black">
-            <div className="flex items-start justify-between gap-4 border-b border-white/[0.08] p-5 pb-4 sm:p-6 sm:pb-5">
+            <div className="flex items-start justify-between gap-3 border-b border-white/[0.08] p-4 pb-3 sm:p-6 sm:pb-5">
               <div>
                 <p className="text-xs uppercase text-[var(--gold)]">Личный кабинет</p>
-                <h2 className="mt-2 font-serif text-3xl leading-tight text-[var(--gold-light)]">{modalTitle}</h2>
+                <h2 className="mt-2 font-serif text-2xl leading-tight text-[var(--gold-light)] sm:text-3xl">{modalTitle}</h2>
               </div>
               <button className="icon-button" onClick={() => setIsOpen(false)} type="button" aria-label="Закрыть">
                 ×
               </button>
             </div>
 
-            <div className="mx-5 mt-5 grid grid-cols-2 rounded-md border border-white/[0.08] bg-black/16 p-0.5 sm:mx-6">
+            <div className="mx-4 mt-4 grid grid-cols-2 rounded-md border border-white/[0.08] bg-black/16 p-0.5 sm:mx-6 sm:mt-5">
               <button className={activeTab === "login" ? "auth-tab auth-tab-active" : "auth-tab"} onClick={() => setActiveTab("login")} type="button">
                 Авторизация
               </button>
@@ -75,7 +85,7 @@ export function AuthModal({ triggerLabel = "Войти", variant = "nav" }: Auth
               </button>
             </div>
 
-            <div ref={bodyRef} className="auth-modal-scrollbar min-h-0 overflow-y-auto p-5 pt-6 sm:p-6">
+            <div ref={bodyRef} className="auth-modal-scrollbar min-h-0 overflow-y-auto p-4 pt-5 sm:p-6 sm:pt-6">
               {activeTab === "login" ? (
               <form action={loginFormAction} className="grid gap-4">
                 <label className="grid gap-2 text-sm font-medium text-white/86" htmlFor="login-email">
@@ -172,7 +182,7 @@ export function AuthModal({ triggerLabel = "Войти", variant = "nav" }: Auth
 
                 <label className="grid gap-2 text-sm font-medium text-white/86" htmlFor="register-phone">
                   Телефон
-                  <div className="grid grid-cols-[7rem_1fr] gap-2">
+                  <div className="grid grid-cols-[6rem_1fr] gap-2 sm:grid-cols-[7rem_1fr]">
                     <select className="field" name="phonePrefix" value={phonePrefix} onChange={(event) => setPhonePrefix(event.target.value)}>
                       <option value="+7">+7</option>
                       <option value="+375">+375</option>
@@ -257,7 +267,7 @@ export function AuthModal({ triggerLabel = "Войти", variant = "nav" }: Auth
 
                 {registerError ? <p className="text-sm text-[var(--danger)]">{registerError}</p> : null}
 
-                <div className="sticky bottom-[-1.5rem] -mx-5 -mb-5 border-t border-white/[0.08] bg-[#10100f]/96 p-5 pt-4 backdrop-blur sm:-mx-6 sm:-mb-6 sm:p-6 sm:pt-4">
+                <div className="sticky bottom-[-1.5rem] -mx-4 -mb-4 border-t border-white/[0.08] bg-[#10100f]/96 p-4 pt-4 backdrop-blur sm:-mx-6 sm:-mb-6 sm:p-6 sm:pt-4">
                   <button className="primary-button min-h-14 w-full px-6 py-3 text-base" disabled={isRegisterPending} type="submit">
                     {isRegisterPending ? "Регистрируем..." : "Зарегистрироваться"}
                   </button>

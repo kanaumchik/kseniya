@@ -413,20 +413,106 @@ select option {
 }
 
 @media (max-width: 767px) {
+  .section-shell {
+    padding-inline: 1rem;
+    padding-block: 1.75rem;
+  }
+
+  .project-section {
+    padding-block: 3.25rem;
+    gap: 1.25rem;
+  }
+
+  .diagnostic-section {
+    padding-block: 3.25rem 2.5rem;
+    gap: 1.25rem;
+  }
+
+  .project-section h2,
+  .diagnostic-header h2,
+  .section-shell h2 {
+    line-height: 1.08;
+  }
+
+  .project-copy,
+  .about-copy,
+  .diagnostic-copy {
+    max-width: none;
+    padding-left: 0;
+    border-left: none;
+    font-size: 0.98rem;
+    line-height: 1.5;
+  }
+
+  .project-copy p,
+  .about-copy p,
+  .diagnostic-copy p {
+    margin-bottom: 0.65rem;
+  }
+
+  .diagnostic-header {
+    max-width: none;
+  }
+
+  .diagnostic-actions {
+    max-width: none;
+    padding-left: 0;
+    margin-bottom: 0;
+  }
+
+  .hero-gold-button {
+    min-width: 100%;
+    min-height: 3.2rem;
+    padding-inline: 1rem;
+  }
+
+  .nav-link {
+    max-width: 12rem;
+    padding: 0.45rem 0.6rem;
+    min-height: 2rem;
+    font-size: 0.82rem;
+  }
+
+  .gold-card {
+    border-radius: 0.34rem;
+  }
+
+  .secondary-button,
+  .icon-button {
+    min-height: 2.25rem;
+  }
+
+  .field {
+    min-height: 2.55rem;
+    padding: 0.6rem 0.75rem;
+  }
+
+  .auth-tab {
+    min-height: 2rem;
+    font-size: 0.82rem;
+  }
+
+  .calendar-date {
+    min-height: 2.95rem;
+    padding: 0.65rem 0.75rem;
+  }
+
+  .hero-kicker {
+    font-size: 0.68rem;
+    padding: 0.4rem 0.65rem;
+  }
+
   .project-copy {
-    padding-left: 1.25rem;
     border-left: none;
   }
 
   .diagnostic-copy {
-    padding-left: 1.25rem;
     border-left: none;
   }
 
   .diagnostic-actions {
     padding-left: 0;
   }
-
 }
 
 .section-title {

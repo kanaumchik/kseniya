@@ -86,10 +86,10 @@ export function BookingCalendar({
   const appointmentTypeLabel = bookingType === "SESSION" ? "Сессия" : "Диагностика";
 
   return (
-    <section className="space-y-5">
+    <section className="space-y-4 sm:space-y-5">
       {days.length > 0 ? (
-        <div className="grid gap-5 lg:grid-cols-[45fr_55fr]">
-          <div className="gold-card p-4">
+        <div className="grid gap-4 lg:grid-cols-[45fr_55fr]">
+          <div className="gold-card p-3 sm:p-4">
             <div className="grid gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--gold)]">Шаг 1</p>
@@ -103,7 +103,7 @@ export function BookingCalendar({
               </p>
             </div>
 
-            <div className="mt-5 rounded-md border border-[var(--line)] bg-black/20 p-3">
+            <div className="mt-4 rounded-md border border-[var(--line)] bg-black/20 p-3 sm:mt-5">
               <div className="flex items-center justify-between gap-3">
                 <p className="text-base font-semibold text-white">{formatMonthLabel(currentMonth)}</p>
                 <div className="flex gap-2">
@@ -163,7 +163,7 @@ export function BookingCalendar({
             </div>
           </div>
 
-          <div className="gold-card p-4">
+          <div className="gold-card p-3 sm:p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--gold)]">Шаг 2</p>
@@ -173,7 +173,7 @@ export function BookingCalendar({
               {role === "ADMIN" && !rescheduleBookingId ? (
                 <label className="grid gap-1 text-xs font-medium text-white/78">
                   Клиент
-                  <select className="field min-w-60 text-sm" value={selectedUserId} onChange={(event) => setSelectedUserId(event.target.value)} required>
+                  <select className="field w-full min-w-0 text-sm sm:min-w-60" value={selectedUserId} onChange={(event) => setSelectedUserId(event.target.value)} required>
                     {userOptions.map((user) => (
                       <option key={user.id} value={user.id}>
                         {user.id === currentUser?.id ? "Для себя" : user.name} ({user.email})
@@ -186,7 +186,7 @@ export function BookingCalendar({
 
             {selectedDate ? (
               <div className="mt-4 max-h-64 overflow-y-auto pr-1">
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
+                <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 sm:gap-2 xl:grid-cols-4">
                 {currentDaySlots.map((slot) => (
                   <SlotSubmitButton
                     key={slot.id}
@@ -206,7 +206,7 @@ export function BookingCalendar({
           </div>
         </div>
       ) : (
-        <div className="gold-card p-5 text-sm text-[var(--muted)]">Свободных дат сейчас нет.</div>
+        <div className="gold-card p-4 text-sm text-[var(--muted)] sm:p-5">Свободных дат сейчас нет.</div>
       )}
 
       {pendingSlot ? (
@@ -287,7 +287,7 @@ function SlotSubmitButton({
   return (
     <button
       aria-label={`${submitLabel}: ${timeLabel}`}
-      className="secondary-button flex min-h-12 w-full items-center justify-center px-3 py-2 text-base"
+      className="secondary-button flex min-h-11 w-full items-center justify-center px-3 py-2 text-sm sm:min-h-12 sm:text-base"
       type="button"
       onClick={onSelect}
     >
