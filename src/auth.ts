@@ -2,6 +2,7 @@ import NextAuth, { type DefaultSession } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/password";
+import { canonicalOrigin, legacyHost } from "@/lib/site-url";
 
 declare module "next-auth" {
   interface Session {
@@ -64,6 +65,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
+    redirect({ url }) {
+      const redirectUrl = url.startsWith("/") ? new URL(url, canonicalOrigin) : new URL(url);
+
+      if (redirectUrl.hostname === legacyHost) {
+        redirectUrl.protocol = "http:";
+        redirectUrl.host = new URL(canonicalOrigin).host;
+
+        return redirectUrl.toString();
+      }
+
+      if (redirectUrl.origin === canonicalOrigin) {
+        return redirectUrl.toString();
+      }
+
+      return canonicalOrigin;
+    },
     jwt({ token, user }) {
       if (user) {
         token.role = user.role;

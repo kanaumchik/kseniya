@@ -34,14 +34,17 @@ const navItems = [
 ];
 
 const footerLegalLinks = [
+  { href: "/legal/offer", label: "Публичная оферта" },
   { href: "/legal/terms", label: "Пользовательское соглашение" },
   { href: "/legal/privacy-policy", label: "Политика обработки персональных данных" },
   { href: "/legal/personal-data-consent", label: "Согласие на обработку персональных данных" },
   { href: "/legal/sensitive-data-consent", label: "Согласие на обработку специальных категорий персональных данных" },
   { href: "/legal/cookie-policy", label: "Политика cookie" },
   { href: "/legal/booking-rules", label: "Правила записи и отмены" },
-  { href: "/legal/informed-consent", label: "Информированное согласие на психологическую диагностику и консультации" },
+  { href: "/legal/informed-consent", label: "Информированное согласие на психологические услуги" },
   { href: "/legal/contacts", label: "Контакты и реквизиты" },
+  { href: "/legal/marketing-consent", label: "Согласие на рекламные и информационные сообщения" },
+  { href: "/legal/review-consent", label: "Согласие на публикацию отзыва" },
 ];
 
 const supportPackages = [
