@@ -36,17 +36,10 @@ const navItems = [
 ];
 
 const footerLegalLinks = [
-  { href: "/legal/offer", label: "Публичная оферта" },
-  { href: "/legal/terms", label: "Пользовательское соглашение" },
   { href: "/legal/privacy-policy", label: "Политика обработки персональных данных" },
-  { href: "/legal/personal-data-consent", label: "Согласие на обработку персональных данных" },
-  { href: "/legal/sensitive-data-consent", label: "Согласие на обработку специальных категорий персональных данных" },
+  { href: "/legal/offer", label: "Публичная оферта" },
   { href: "/legal/cookie-policy", label: "Политика cookie" },
-  { href: "/legal/booking-rules", label: "Правила записи и отмены" },
-  { href: "/legal/informed-consent", label: "Информированное согласие на психологические услуги" },
   { href: "/legal/contacts", label: "Контакты и реквизиты" },
-  { href: "/legal/marketing-consent", label: "Согласие на рекламные и информационные сообщения" },
-  { href: "/legal/review-consent", label: "Согласие на публикацию отзыва" },
 ];
 
 const supportPackages = [
@@ -432,11 +425,17 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
       <footer className="border-t border-white/[0.06] bg-[#080807] px-6 py-10 lg:px-10">
         <div className="mx-auto grid max-w-5xl gap-10 lg:grid-cols-[1.25fr_0.95fr] lg:gap-16">
           <div className="max-w-xl">
-            <p className="font-serif text-xl uppercase text-[var(--gold-light)]">Ксения Наумчик</p>
-            <p className="mt-4 text-sm leading-7 text-white/68">
-              Психологические сессии, диагностика и сопровождение с Ксенией Наумчик. Сервис не является медицинской, психиатрической или экстренной психологической помощью. В случае угрозы жизни или здоровью, острого кризиса или риска причинения вреда себе или другим необходимо обратиться в экстренные службы или медицинскую организацию.
+            <p className="text-sm leading-7 text-white/68">
+              Сессия не заменяет медицинскую помощь: при признаках психических расстройств рекомендуется обратиться к психиатру.
             </p>
-            <div className="mt-5 grid gap-3 text-sm leading-6 text-white/66">
+            <div className="mt-5 grid gap-2 text-sm leading-6 text-white/72">
+              <p className="font-semibold text-white">Экстренная помощь</p>
+              <Link className="w-fit text-lg font-semibold text-[#ff4b1f] transition hover:text-[var(--gold-light)]" href="tel:+74959895050">
+                +7 (495) 989-50-50
+              </Link>
+              <p className="max-w-sm text-white/76">Телефон горячей линии психологической помощи МЧС России</p>
+            </div>
+            <div className="mt-6 grid gap-3 text-sm leading-6 text-white/66">
               <p>
                 E-mail:{" "}
                 <Link className="font-normal text-white/78 transition hover:text-[var(--gold-light)]" href="mailto:naumchik.psy@yandex.ru">
@@ -453,7 +452,9 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
           </div>
 
           <div>
-            <h2 className="font-serif text-lg font-semibold text-[var(--gold-light)]">Правовая информация</h2>
+            <Link className="font-serif text-lg font-semibold text-[var(--gold-light)] transition hover:text-white" href="/legal">
+              Правовая информация
+            </Link>
             <nav className="mt-5 grid gap-2.5 text-sm text-white/76">
               {footerLegalLinks.map((item) => (
                 <Link className="font-normal leading-[1.45] transition hover:text-[var(--gold-light)]" href={item.href} key={item.href}>
