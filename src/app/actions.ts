@@ -127,6 +127,7 @@ export async function createBookingAction(formData: FormData) {
   }
 
   const bookingType = normalizeBookingType(String(formData.get("type") ?? "DIAGNOSTIC"));
+  const packageTitle = bookingType === "SESSION" ? normalizePackageTitle(formData.get("packageTitle")) : null;
   const selectedSlot = parseSlotDates(formData);
   const startsAt = selectedSlot.startsAt;
   const endsAt = getBookingEnd(startsAt, bookingType);
@@ -140,6 +141,7 @@ export async function createBookingAction(formData: FormData) {
       endsAt,
       clientTimeZone,
       type: bookingType,
+      packageTitle,
       ...(bookingType === "DIAGNOSTIC" ? { diagnosticNumber: await getNextDiagnosticNumber() } : {}),
       status: "ACTIVE",
     },
@@ -156,6 +158,7 @@ export async function adminCreateBookingAction(formData: FormData) {
   const userId = parseId(formData.get("userId"), "Некорректный ID пользователя.");
   const currentUserId = getSessionUserId(session);
   const bookingType = normalizeBookingType(String(formData.get("type") ?? "DIAGNOSTIC"));
+  const packageTitle = bookingType === "SESSION" ? normalizePackageTitle(formData.get("packageTitle")) : null;
   const selectedSlot = parseSlotDates(formData);
   const startsAt = selectedSlot.startsAt;
   const endsAt = getBookingEnd(startsAt, bookingType);
@@ -196,6 +199,7 @@ export async function adminCreateBookingAction(formData: FormData) {
       endsAt,
       clientTimeZone: user.timeZone,
       type: bookingType,
+      packageTitle,
       ...(bookingType === "DIAGNOSTIC" ? { diagnosticNumber: await getNextDiagnosticNumber() } : {}),
       status: "ACTIVE",
     },
@@ -668,6 +672,16 @@ async function getNextDiagnosticNumber() {
 
 function normalizeBookingType(value: string) {
   return value === "SESSION" ? "SESSION" : "DIAGNOSTIC";
+}
+
+function normalizePackageTitle(value: FormDataEntryValue | null) {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const title = value.trim();
+
+  return title ? title.slice(0, 160) : null;
 }
 
 function getBookingEnd(startsAt: Date, type: string) {

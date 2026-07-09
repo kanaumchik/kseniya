@@ -111,25 +111,15 @@ export function ProfileForm({ user }: ProfileFormProps) {
 
           <label className="grid gap-2 text-sm font-medium text-white/86">
             Дата рождения
-            <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
-              <input
-                className="field"
-                name="birthDate"
-                value={birthDate}
-                onChange={(event) => setBirthDate(formatBirthDateInput(event.target.value))}
-                placeholder="ДД.ММ.ГГГГ"
-                inputMode="numeric"
-                maxLength={10}
-                required
-              />
-              <input
-                aria-label="Выбрать дату рождения"
-                className="field min-w-40"
-                type="date"
-                value={calendarValue}
-                onChange={(event) => setBirthDate(fromDateInputValue(event.target.value))}
-              />
-            </div>
+            <input name="birthDate" type="hidden" value={birthDate} />
+            <input
+              aria-label="Дата рождения"
+              className="field"
+              type="date"
+              value={calendarValue}
+              onChange={(event) => setBirthDate(fromDateInputValue(event.target.value))}
+              required
+            />
           </label>
 
           <label className="grid gap-2 text-sm font-medium text-white/86">
@@ -251,13 +241,6 @@ function splitPhone(phone: string | null) {
     prefix,
     local: formatPhoneInput(local),
   };
-}
-
-function formatBirthDateInput(value: string) {
-  const digits = value.replace(/\D/g, "").slice(0, 8);
-  const parts = [digits.slice(0, 2), digits.slice(2, 4), digits.slice(4, 8)].filter(Boolean);
-
-  return parts.join(".");
 }
 
 function toDateInputValue(value: string) {

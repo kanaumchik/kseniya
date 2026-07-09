@@ -78,6 +78,7 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
                   <th className="py-3 pr-4">Телефон</th>
                   <th className="py-3 pr-4">Активные курсы</th>
                   <th className="py-3 pr-4">Источник</th>
+                  <th className="py-3 pr-4">Пакет сопровождения</th>
                 </tr>
               </thead>
               <tbody>
@@ -93,6 +94,7 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
                     <td className="py-3 pr-4 text-white/82">{client.phone || "Не указан"}</td>
                     <td className="py-3 pr-4 text-white/82">{formatCourses(client.courses)}</td>
                     <td className="py-3 pr-4 text-white/82">{client.source || "Не указан"}</td>
+                    <td className="py-3 pr-4 text-white/82">{formatPackage(client.bookings)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -117,6 +119,14 @@ async function getClients(filters: { course: string; email: string; name: string
         where: { remaining: { gt: 0 } },
         orderBy: { updatedAt: "desc" },
       },
+      bookings: {
+        where: {
+          type: "SESSION",
+          packageTitle: { not: null },
+        },
+        orderBy: { startsAt: "desc" },
+        take: 1,
+      },
     },
     orderBy: [{ id: "asc" }, { createdAt: "asc" }],
   });
@@ -135,4 +145,8 @@ function formatCourses(courses: { title: string; remaining: number }[]) {
   }
 
   return courses.map((course) => `${course.title} (${course.remaining})`).join(", ");
+}
+
+function formatPackage(bookings: { packageTitle: string | null }[]) {
+  return bookings[0]?.packageTitle ?? "Не выбран";
 }

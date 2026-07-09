@@ -21,6 +21,7 @@ type BookingCalendarProps = {
   users?: UserOption[];
   currentUser?: UserOption;
   bookingType?: BookingType;
+  packageTitle?: string;
   rescheduleBookingId?: string;
   rescheduleFromLabel?: string;
   submitLabel?: string;
@@ -33,6 +34,7 @@ export function BookingCalendar({
   users = [],
   currentUser,
   bookingType = "DIAGNOSTIC",
+  packageTitle,
   rescheduleBookingId,
   rescheduleFromLabel,
   submitLabel = rescheduleBookingId ? "Перенести" : "Выбрать",
@@ -217,6 +219,7 @@ export function BookingCalendar({
             { name: "endsAt", value: pendingEndsAt },
             { name: "timeZone", value: selectedTimeZone },
             ...(!rescheduleBookingId ? [{ name: "type", value: bookingType }] : []),
+            ...(!rescheduleBookingId && bookingType === "SESSION" && packageTitle ? [{ name: "packageTitle", value: packageTitle }] : []),
             ...(role === "ADMIN" && !rescheduleBookingId ? [{ name: "userId", value: selectedUserId || currentUser?.id }] : []),
           ]}
           onSecondary={() => setPendingSlot(null)}

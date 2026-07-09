@@ -134,6 +134,7 @@ export function AdminSchedule({ availableSlots, currentUser, day, dayOffs, month
                       >
                         <span className="text-xs font-semibold">{formatTimeRangeText(slot, selectedTimeZone)}</span>
                         <span className="mt-1 block text-left text-sm">{getSlotTitle(slot)}</span>
+                        {slot.packageTitle ? <span className="mt-1 block text-left text-[0.68rem] text-[var(--gold-light)]">{slot.packageTitle}</span> : null}
                         {slot.bookedUserId ? (
                           <Link
                             className="mt-1 block text-left text-xs text-[var(--gold-light)] hover:text-[var(--gold)]"
@@ -160,6 +161,7 @@ export function AdminSchedule({ availableSlots, currentUser, day, dayOffs, month
               <div>
                 <p className="font-serif text-2xl text-[var(--gold-light)]">{getSlotTitle(selectedSlot)}</p>
                 <p className="mt-2 text-sm text-[var(--muted)]">{formatSlotFullDate(selectedSlot, selectedTimeZone)}</p>
+                {selectedSlot.packageTitle ? <p className="mt-2 text-sm text-[var(--gold-light)]">Пакет: {selectedSlot.packageTitle}</p> : null}
               </div>
               <button className="icon-button" type="button" aria-label="Закрыть" onClick={() => setSelectedSlot(null)}>
                 ×

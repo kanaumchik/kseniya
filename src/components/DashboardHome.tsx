@@ -97,7 +97,7 @@ const faqItems = [
 export function DashboardHome({ id, name, email, role, timeZone, slots, users }: DashboardHomeProps) {
   const currentUser = id && name && email ? { id, name, email } : undefined;
 
-  function renderBookingCta(label = "Записаться на диагностику", type: "DIAGNOSTIC" | "SESSION" = "DIAGNOSTIC") {
+  function renderBookingCta(label = "Записаться на диагностику", type: "DIAGNOSTIC" | "SESSION" = "DIAGNOSTIC", packageTitle?: string) {
     if (!role) {
       return <AuthModal triggerLabel={label} variant="hero" />;
     }
@@ -114,7 +114,7 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
 
     return (
       <BookingModal buttonLabel={label} title={type === "SESSION" ? "Запись на сессию" : "Запись на диагностику"}>
-        <BookingCalendar bookingType={type} currentUser={currentUser} role={role} slots={slots} timeZone={timeZone} users={users} />
+        <BookingCalendar bookingType={type} currentUser={currentUser} packageTitle={packageTitle} role={role} slots={slots} timeZone={timeZone} users={users} />
       </BookingModal>
     );
   }
@@ -216,7 +216,7 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
         <div className="max-w-4xl">
           <h2 className="font-serif text-3xl text-[var(--gold-light)] sm:text-4xl">Обо мне</h2>
         </div>
-        <div className="grid max-w-5xl gap-5 text-base leading-8 text-white/72">
+        <div className="about-copy">
           <p>
             Меня зовут Ксения. Я психолог-консультант, терапевт в расстановочном подходе и автор трансформационных
             программ.
@@ -256,10 +256,6 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
       <section className="section-shell diagnostic-section grid gap-7 border-t border-[var(--line)]" id="diagnostic">
         <div className="diagnostic-header">
           <h2 className="font-serif text-3xl text-[var(--gold-light)] sm:text-4xl">Диагностика</h2>
-          <div className="diagnostic-meta" aria-label="Параметры диагностики">
-            <span>Формат: Диагностика</span>
-            <span>60 минут</span>
-          </div>
         </div>
         <div className="diagnostic-copy">
           <p>
@@ -315,7 +311,7 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
         </div>
 
         <ContentBlock
-          title="Индивидуальное сопровождение по Вашему запросу"
+          title="Индивидуальное сопровождение по вашему запросу"
           text="Формат для тех, кто хочет пройти свою тему глубже и не ограничиваться одной сессией. 
 В сопровождении соединяются глубокие расстановочные сессии и поддерживающие встречи, которые помогают интегрировать опыт, замечать сопротивление и не оставаться один на один с процессом изменений. 
 Это пространство, где можно двигаться последовательно, с фокусом, структурой и бережной поддержкой."
@@ -323,7 +319,7 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
 
         <div className="grid gap-4 lg:grid-cols-3">
           {supportPackages.map((item) => (
-            <PackageCard cta={renderBookingCta("Записаться на диагностику", "DIAGNOSTIC")} item={item} key={item.title} />
+            <PackageCard cta={renderBookingCta("Записаться на первую сессию", "SESSION", item.title)} item={item} key={item.title} />
           ))}
         </div>
 
@@ -334,8 +330,18 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
 
         <div className="grid gap-4 lg:grid-cols-3">
           {authorPrograms.map((item) => (
-            <ProgramCard cta={renderBookingCta("Записаться на диагностику", "DIAGNOSTIC")} item={item} key={item.title} />
+            <ProgramCard item={item} key={item.title} />
           ))}
+        </div>
+
+        <div className="gold-card grid gap-4 p-6 text-center sm:mx-auto sm:max-w-3xl">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center">
+            <HourglassIcon className="h-10 w-10 text-[var(--gold-light)]" />
+          </div>
+          <p className="text-base leading-7 text-white/82">
+            Программы находятся в разработке, но вы уже сейчас можете записаться на диагностику
+          </p>
+          <div className="flex justify-center">{renderBookingCta("Записаться на диагностику", "DIAGNOSTIC")}</div>
         </div>
 
         <ContentBlock
@@ -442,7 +448,7 @@ function PackageCard({ cta, item }: { cta: ReactNode; item: { title: string; tex
   );
 }
 
-function ProgramCard({ cta, item }: { cta: ReactNode; item: { title: string; text: string; meta: string[] } }) {
+function ProgramCard({ item }: { item: { title: string; text: string; meta: string[] } }) {
   return (
     <article className="gold-card grid gap-3 p-5">
       <h4 className="font-serif text-xl text-[var(--gold-light)]">{item.title}</h4>
@@ -452,7 +458,16 @@ function ProgramCard({ cta, item }: { cta: ReactNode; item: { title: string; tex
           <p key={line}>{line}</p>
         ))}
       </div>
-      <div>{cta}</div>
     </article>
+  );
+}
+
+function HourglassIcon({ className }: { className?: string }) {
+  return (
+    <svg aria-hidden="true" className={className} fill="none" viewBox="0 0 48 48">
+      <circle cx="24" cy="24" r="22" stroke="currentColor" strokeWidth="1.5" opacity="0.55" />
+      <path d="M14 6h20M14 42h20M18 6v7.5c0 3.4 2 6.5 5.1 7.9l1.8.8-1.8.8A8.7 8.7 0 0 0 18 31.5V42M30 6v7.5c0 3.4-2 6.5-5.1 7.9l-1.8.8 1.8.8A8.7 8.7 0 0 1 30 31.5V42" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+      <path d="M20.5 34.5h7M20.5 13.5h7M21.5 17.5h5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" opacity="0.55" />
+    </svg>
   );
 }

@@ -28,6 +28,7 @@ type BookingWithUser = {
   startsAt: Date;
   endsAt: Date;
   type: string;
+  packageTitle: string | null;
   diagnosticNumber: number | null;
   user: {
     id: number;
@@ -48,6 +49,7 @@ export type Slot = {
   isDayOff: boolean;
   bookingId?: string;
   bookingType?: string;
+  packageTitle?: string | null;
   diagnosticNumber?: number | null;
   bookedUserId?: string;
   bookedBy?: string;
@@ -290,6 +292,7 @@ function buildCustomSlot(
     isDayOff: dayOffDateKeys.has(customSlot.dateKey),
     bookingId: booking ? String(booking.id) : undefined,
     bookingType: booking?.type,
+    packageTitle: booking?.packageTitle,
     diagnosticNumber: booking?.diagnosticNumber,
     bookedUserId: booking ? String(booking.user.id) : undefined,
     bookedBy: booking ? `${booking.user.name} (${booking.user.email})` : undefined,
@@ -335,6 +338,7 @@ function buildSlotsForDateKey(
       isDayOff,
       bookingId: booking ? String(booking.id) : undefined,
       bookingType: booking?.type,
+      packageTitle: booking?.packageTitle,
       diagnosticNumber: booking?.diagnosticNumber,
       bookedUserId: booking ? String(booking.user.id) : undefined,
       bookedBy: booking ? `${booking.user.name} (${booking.user.email})` : undefined,

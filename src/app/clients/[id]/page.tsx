@@ -110,7 +110,13 @@ export default async function ClientProfilePage({ params }: ClientProfilePagePro
                       {formatDateTime(booking.startsAt, psychologistTimeZone)}, {formatTimeRange(booking.startsAt, booking.endsAt, psychologistTimeZone)}
                     </p>
                     <p className="mt-1 text-xs text-[var(--muted)]">
-                      {booking.type === "SESSION" ? "Сессия" : booking.diagnosticNumber ? `Диагностика Д${booking.diagnosticNumber}` : "Диагностика"} ·{" "}
+                      {booking.type === "SESSION"
+                        ? booking.packageTitle
+                          ? `Сессия · ${booking.packageTitle}`
+                          : "Сессия"
+                        : booking.diagnosticNumber
+                          ? `Диагностика Д${booking.diagnosticNumber}`
+                          : "Диагностика"} ·{" "}
                       {booking.status === "CANCELLED" ? "Отменена" : "Активна"}
                     </p>
                   </div>

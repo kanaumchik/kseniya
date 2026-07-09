@@ -33,6 +33,7 @@ model Booking {
   endsAt           DateTime
   clientTimeZone   String
   type             String    @default("DIAGNOSTIC")
+  packageTitle     String?
   diagnosticNumber Int?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
