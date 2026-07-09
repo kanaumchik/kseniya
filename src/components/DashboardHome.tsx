@@ -267,7 +267,7 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
 
         <div className="grid gap-4 lg:grid-cols-3">
           {supportPackages.map((item) => (
-            <PackageCard item={item} key={item.title} />
+            <PackageCard cta={renderBookingCta("Записаться на диагностику", "DIAGNOSTIC")} item={item} key={item.title} />
           ))}
         </div>
 
@@ -278,7 +278,7 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
 
         <div className="grid gap-4 lg:grid-cols-3">
           {authorPrograms.map((item) => (
-            <ProgramCard item={item} key={item.title} />
+            <ProgramCard cta={renderBookingCta("Записаться на диагностику", "DIAGNOSTIC")} item={item} key={item.title} />
           ))}
         </div>
 
@@ -407,7 +407,7 @@ function ContentBlock({ title, text }: { title: string; text: string }) {
   );
 }
 
-function PackageCard({ item }: { item: { title: string; text: string; details: string[]; meta: string[] } }) {
+function PackageCard({ cta, item }: { cta: ReactNode; item: { title: string; text: string; details: string[]; meta: string[] } }) {
   return (
     <article className="gold-card grid gap-3 p-5">
       <h4 className="font-serif text-xl text-[var(--gold-light)]">{item.title}</h4>
@@ -422,14 +422,12 @@ function PackageCard({ item }: { item: { title: string; text: string; details: s
           <p key={line}>{line}</p>
         ))}
       </div>
-      <button className="primary-button mt-2 w-fit px-5 py-3 text-sm" type="button">
-        КУПИТЬ
-      </button>
+      <div>{cta}</div>
     </article>
   );
 }
 
-function ProgramCard({ item }: { item: { title: string; text: string; meta: string[] } }) {
+function ProgramCard({ cta, item }: { cta: ReactNode; item: { title: string; text: string; meta: string[] } }) {
   return (
     <article className="gold-card grid gap-3 p-5">
       <h4 className="font-serif text-xl text-[var(--gold-light)]">{item.title}</h4>
@@ -439,9 +437,7 @@ function ProgramCard({ item }: { item: { title: string; text: string; meta: stri
           <p key={line}>{line}</p>
         ))}
       </div>
-      <button className="primary-button mt-2 w-fit px-5 py-3 text-sm" type="button">
-        КУПИТЬ
-      </button>
+      <div>{cta}</div>
     </article>
   );
 }
