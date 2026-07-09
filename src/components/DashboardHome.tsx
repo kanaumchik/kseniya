@@ -258,7 +258,7 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
             <h1 className="max-w-[18rem] font-serif text-[1.74rem] leading-[0.95] text-[var(--gold-light)] uppercase sm:max-w-full sm:text-[3.75rem] lg:text-[4.05rem]">
               <span className="block text-[1.48rem] leading-[1.05] sm:block sm:text-[3.1rem] lg:text-[3.3rem]">Верни свою силу,</span>
               <span className="block text-[1.48rem] leading-[1.05] sm:block sm:text-[3.1rem] lg:text-[3.3rem]">раскрой потенциал</span>
-              <span style={{ fontFamily: "var(--font-great-vibes)" }} className="block text-[1.1rem] leading-[1.28] sm:text-3xl lg:text-[3.2rem] normal-case">
+              <span style={{ fontFamily: "var(--font-great-vibes)" }} className="block text-[1.3rem] leading-[1.28] sm:text-3xl lg:text-[3.2rem] normal-case">
                 и познакомься с собой новым
               </span>
             </h1>
