@@ -84,6 +84,7 @@ export function BookingCalendar({
   const pendingEndsAt = pendingSlot ? addMinutesIso(pendingSlot.startsAt, bookingDurationMinutes) : "";
   const durationLabel = bookingType === "SESSION" ? "90 минут" : "60 минут";
   const appointmentTypeLabel = bookingType === "SESSION" ? "Сессия" : "Диагностика";
+  const requiresBookingConsents = role !== "ADMIN" && !rescheduleBookingId;
 
   return (
     <section className="space-y-4 sm:space-y-5">
@@ -227,6 +228,7 @@ export function BookingCalendar({
           secondaryLabel="Выбрать другое время"
           secondaryFirst
           title={rescheduleBookingId ? "Подтвердите дату и время" : "Подтвердите дату и время"}
+          formContent={requiresBookingConsents ? <BookingConsentFields /> : null}
         >
           <div className="grid gap-4">
             {rescheduleBookingId && rescheduleFromLabel ? (
@@ -268,6 +270,52 @@ export function BookingCalendar({
         </ConfirmDialog>
       ) : null}
     </section>
+  );
+}
+
+function BookingConsentFields() {
+  return (
+    <div className="grid gap-2 rounded-md border border-white/[0.08] bg-black/18 p-3 text-sm leading-6 text-white/74">
+      <label className="flex gap-3">
+        <input className="mt-1 size-4 shrink-0 accent-[var(--gold)]" name="offerAccepted" required type="checkbox" value="accepted" />
+        <span>
+          Я принимаю условия{" "}
+          <Link className="font-semibold text-[var(--gold-light)] transition hover:text-white" href="/legal/offer" target="_blank">
+            Публичной оферты
+          </Link>
+        </span>
+      </label>
+
+      <label className="flex gap-3">
+        <input className="mt-1 size-4 shrink-0 accent-[var(--gold)]" name="bookingRulesAccepted" required type="checkbox" value="accepted" />
+        <span>
+          Я ознакомлен(а) с{" "}
+          <Link className="font-semibold text-[var(--gold-light)] transition hover:text-white" href="/legal/booking-rules" target="_blank">
+            Правилами записи, переноса и отмены встреч
+          </Link>
+        </span>
+      </label>
+
+      <label className="flex gap-3">
+        <input className="mt-1 size-4 shrink-0 accent-[var(--gold)]" name="informedConsentAccepted" required type="checkbox" value="accepted" />
+        <span>
+          Я подтверждаю{" "}
+          <Link className="font-semibold text-[var(--gold-light)] transition hover:text-white" href="/legal/informed-consent" target="_blank">
+            Информированное согласие на психологические услуги
+          </Link>
+        </span>
+      </label>
+
+      <label className="flex gap-3">
+        <input className="mt-1 size-4 shrink-0 accent-[var(--gold)]" name="sensitiveDataConsent" required type="checkbox" value="accepted" />
+        <span>
+          Я даю согласие на{" "}
+          <Link className="font-semibold text-[var(--gold-light)] transition hover:text-white" href="/legal/sensitive-data-consent" target="_blank">
+            обработку специальных категорий персональных данных
+          </Link>
+        </span>
+      </label>
+    </div>
   );
 }
 

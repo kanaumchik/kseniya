@@ -23,6 +23,7 @@ model User {
   createdAt    DateTime       @default(now())
   bookings     Booking[]
   courses      ClientCourse[]
+  consentEvents ConsentEvent[]
 }
 
 model Booking {
@@ -40,6 +41,7 @@ model Booking {
   status           String    @default("ACTIVE")
   cancelledAt      DateTime?
   rescheduledAt    DateTime?
+  consentEvents    ConsentEvent[]
 
   @@index([startsAt])
   @@index([startsAt, endsAt])
@@ -91,4 +93,70 @@ model DayOff {
   id        Int      @id @default(autoincrement())
   dateKey   String   @unique
   createdAt DateTime @default(now())
+}
+
+model LegalDocumentVersion {
+  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  documentCode  String         @map("document_code")
+  title         String
+  version       String
+  publishedAt   DateTime       @map("published_at") @db.Timestamptz(6)
+  url           String
+  contentText   String         @map("content_text")
+  contentSha256 String         @map("content_sha256")
+  isActive      Boolean        @default(true) @map("is_active")
+  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  consentEvents ConsentEvent[]
+
+  @@unique([documentCode, version, contentSha256])
+  @@index([documentCode, isActive])
+  @@map("legal_document_versions")
+}
+
+model ConsentEvent {
+  id                 String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId             Int?                  @map("user_id")
+  user               User?                 @relation(fields: [userId], references: [id], onDelete: SetNull)
+  anonymousId        String?               @map("anonymous_id")
+  stage              String
+  consentType        String                @map("consent_type")
+  action             String
+  documentVersionId  String?               @map("document_version_id") @db.Uuid
+  documentVersionRef LegalDocumentVersion? @relation(fields: [documentVersionId], references: [id], onDelete: SetNull)
+  documentCode       String?               @map("document_code")
+  documentVersion    String?               @map("document_version")
+  documentSha256     String?               @map("document_sha256")
+  documentUrl        String?               @map("document_url")
+  bookingKind        String?               @map("booking_kind")
+  serviceId          String?               @map("service_id")
+  appointmentId      Int?                  @map("appointment_id")
+  appointment        Booking?              @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  cookieChoice       String?               @map("cookie_choice")
+  cookiesNecessary   Boolean?              @map("cookies_necessary")
+  cookiesAnalytics   Boolean?              @map("cookies_analytics")
+  cookiesMarketing   Boolean?              @map("cookies_marketing")
+  checkboxLabel      String?               @map("checkbox_label")
+  buttonLabel        String?               @map("button_label")
+  pageUrl            String                @map("page_url")
+  referrer           String?
+  ipAddressHash      String?               @map("ip_address_hash")
+  userAgent          String?               @map("user_agent")
+  acceptLanguage     String?               @map("accept_language")
+  timezone           String?
+  sessionIdHash      String?               @map("session_id_hash")
+  requestId          String?               @map("request_id")
+  eventPayload       Json                  @default("{}") @map("event_payload")
+  occurredAt         DateTime              @default(now()) @map("occurred_at") @db.Timestamptz(6)
+  previousEventHash  String?               @map("previous_event_hash")
+  eventHash          String                @unique @map("event_hash")
+  serverSignature    String                @map("server_signature")
+  signatureAlgorithm String                @default("HMAC-SHA256") @map("signature_algorithm")
+  createdAt          DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([userId, occurredAt])
+  @@index([anonymousId, occurredAt])
+  @@index([stage, occurredAt])
+  @@index([consentType, occurredAt])
+  @@index([appointmentId])
+  @@map("consent_events")
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { loginAction, registerAction } from "@/app/actions";
@@ -260,10 +261,47 @@ export function AuthModal({ triggerClassName, triggerLabel = "Войти", varia
                   </label>
                 </div>
 
-                <label className="flex gap-3 rounded-md border border-white/[0.08] bg-black/18 p-3 text-sm leading-6 text-white/74">
-                  <input className="mt-1 size-4 accent-[var(--gold)]" name="consent" type="checkbox" value="accepted" required />
-                  <span>Я принимаю условия использования и политику обработки персональных данных</span>
-                </label>
+                <div className="grid gap-2 rounded-md border border-white/[0.08] bg-black/18 p-3 text-sm leading-6 text-white/74">
+                  <label className="flex gap-3">
+                    <input className="mt-1 size-4 shrink-0 accent-[var(--gold)]" name="termsAccepted" type="checkbox" value="accepted" required />
+                    <span>
+                      Я принимаю условия{" "}
+                      <Link className="font-semibold text-[var(--gold-light)] transition hover:text-white" href="/legal/terms" target="_blank">
+                        Пользовательского соглашения
+                      </Link>
+                    </span>
+                  </label>
+
+                  <label className="flex gap-3">
+                    <input className="mt-1 size-4 shrink-0 accent-[var(--gold)]" name="personalDataConsent" type="checkbox" value="accepted" required />
+                    <span>
+                      Я даю согласие на{" "}
+                      <Link className="font-semibold text-[var(--gold-light)] transition hover:text-white" href="/legal/personal-data-consent" target="_blank">
+                        обработку персональных данных
+                      </Link>
+                    </span>
+                  </label>
+
+                  <label className="flex gap-3">
+                    <input className="mt-1 size-4 shrink-0 accent-[var(--gold)]" name="privacyPolicyAcknowledged" type="checkbox" value="accepted" required />
+                    <span>
+                      Я подтверждаю, что ознакомлен(а) с{" "}
+                      <Link className="font-semibold text-[var(--gold-light)] transition hover:text-white" href="/legal/privacy-policy" target="_blank">
+                        Политикой обработки персональных данных
+                      </Link>
+                    </span>
+                  </label>
+
+                  <label className="flex gap-3 border-t border-white/[0.08] pt-2">
+                    <input className="mt-1 size-4 shrink-0 accent-[var(--gold)]" name="marketingConsent" type="checkbox" value="accepted" />
+                    <span>
+                      Я даю согласие на получение{" "}
+                      <Link className="font-semibold text-[var(--gold-light)] transition hover:text-white" href="/legal/marketing-consent" target="_blank">
+                        рекламных и информационных сообщений
+                      </Link>
+                    </span>
+                  </label>
+                </div>
 
                 {registerError ? <p className="text-sm text-[var(--danger)]">{registerError}</p> : null}
 

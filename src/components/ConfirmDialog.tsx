@@ -12,6 +12,7 @@ type ConfirmDialogProps = {
   eyebrow?: string;
   description?: ReactNode;
   children?: ReactNode;
+  formContent?: ReactNode;
   action?: (formData: FormData) => void | Promise<void>;
   hiddenFields?: HiddenField[];
   primaryLabel: string;
@@ -29,6 +30,7 @@ export function ConfirmDialog({
   eyebrow,
   description,
   children,
+  formContent,
   action,
   hiddenFields = [],
   primaryLabel,
@@ -104,6 +106,7 @@ export function ConfirmDialog({
               {hiddenFields.map((field) => (
                 <input key={field.name} name={field.name} type="hidden" value={field.value ?? ""} />
               ))}
+              {formContent ? <div className="sm:col-span-2">{formContent}</div> : null}
               {buttons}
             </form>
           ) : (

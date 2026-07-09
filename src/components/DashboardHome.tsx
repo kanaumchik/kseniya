@@ -425,28 +425,37 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
       <footer className="border-t border-white/[0.06] bg-[#080807] px-6 py-10 lg:px-10">
         <div className="mx-auto grid max-w-5xl gap-10 lg:grid-cols-[1.25fr_0.95fr] lg:gap-16">
           <div className="max-w-xl">
-            <p className="text-sm leading-7 text-white/68">
-              Сессия не заменяет медицинскую помощь: при признаках психических расстройств рекомендуется обратиться к психиатру.
-            </p>
-            <div className="mt-5 grid gap-2 text-sm leading-6 text-white/72">
-              <p className="font-semibold text-white">Экстренная помощь</p>
-              <Link className="w-fit text-lg font-semibold text-[#ff4b1f] transition hover:text-[var(--gold-light)]" href="tel:+74959895050">
-                +7 (495) 989-50-50
-              </Link>
-              <p className="max-w-sm text-white/76">Телефон горячей линии психологической помощи МЧС России</p>
-            </div>
-            <div className="mt-6 grid gap-3 text-sm leading-6 text-white/66">
+            <div className="grid gap-2 text-sm leading-6 text-white/66">
               <p>
+                Оператор: <span className="font-semibold text-white/82">ИП Наумчик Ксения Андреевна</span>
+              </p>
+              <p>
+                ИНН <span className="font-semibold text-white/82">860105706756</span>, ОГРНИП{" "}
+                <span className="font-semibold text-white/82">325723200087383</span>
+              </p>
+              <p className="mt-4">
                 E-mail:{" "}
-                <Link className="font-normal text-white/78 transition hover:text-[var(--gold-light)]" href="mailto:naumchik.psy@yandex.ru">
+                <Link className="font-semibold text-white/82 transition hover:text-[var(--gold-light)]" href="mailto:naumchik.psy@yandex.ru">
                   naumchik.psy@yandex.ru
                 </Link>
               </p>
-              <div className="grid gap-1">
-                <p>
-                  Оператор: <span className="text-white/82">ИП Наумчик Ксения Андреевна</span>
-                </p>
-                <p>ИНН 860105706756, ОГРНИП 325723200087383</p>
+              <p>
+                Телефон:{" "}
+                <Link className="font-semibold text-white/82 transition hover:text-[var(--gold-light)]" href="tel:+79829202342">
+                  +7 982 920 2342
+                </Link>
+              </p>
+            </div>
+            <div className="mt-10 max-w-xl">
+              <p className="text-sm font-semibold leading-7 text-white/68">
+                Сессия не заменяет медицинскую помощь: при признаках психических расстройств рекомендуется обратиться к психиатру.
+              </p>
+              <div className="mt-5 grid gap-2 text-sm leading-6 text-white/72">
+                <p className="font-semibold text-white">Экстренная помощь</p>
+                <Link className="w-fit text-lg font-semibold text-[#ff4b1f] transition hover:text-[var(--gold-light)]" href="tel:+74959895050">
+                  +7 (495) 989-50-50
+                </Link>
+                <p className="max-w-sm text-white/76">Горячая линия психологической помощи МЧС России</p>
               </div>
             </div>
           </div>

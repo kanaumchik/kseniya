@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { AuthError } from "next-auth";
 import { auth, signIn, signOut } from "@/auth";
+import { recordConsentEvent, type ConsentType } from "@/lib/consent-audit";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import { prisma } from "@/lib/prisma";
 import { getAppHomeUrl } from "@/lib/site-url";
@@ -49,7 +50,10 @@ export async function registerAction(_previousState: string | undefined, formDat
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
   const passwordRepeat = String(formData.get("passwordRepeat") ?? "");
-  const consent = String(formData.get("consent") ?? "");
+  const termsAccepted = String(formData.get("termsAccepted") ?? "");
+  const personalDataConsent = String(formData.get("personalDataConsent") ?? "");
+  const privacyPolicyAcknowledged = String(formData.get("privacyPolicyAcknowledged") ?? "");
+  const marketingConsent = String(formData.get("marketingConsent") ?? "");
   const timeZone = getTimeZoneForCity(city);
 
   if (!firstName || !lastName || !gender || !birthDate || !city || !phone || !email || !password || !passwordRepeat) {
@@ -80,8 +84,16 @@ export async function registerAction(_previousState: string | undefined, formDat
     return "Пароли не совпадают.";
   }
 
-  if (consent !== "accepted") {
-    return "Для регистрации нужно принять условия и согласие на обработку персональных данных.";
+  if (termsAccepted !== "accepted") {
+    return "Для регистрации нужно принять условия Пользовательского соглашения.";
+  }
+
+  if (personalDataConsent !== "accepted") {
+    return "Для регистрации нужно дать согласие на обработку персональных данных.";
+  }
+
+  if (privacyPolicyAcknowledged !== "accepted") {
+    return "Для регистрации нужно подтвердить ознакомление с Политикой обработки персональных данных.";
   }
 
   const existingUser = await prisma.user.findUnique({ where: { email } });
@@ -90,7 +102,7 @@ export async function registerAction(_previousState: string | undefined, formDat
     return "Пользователь с таким e-mail уже зарегистрирован.";
   }
 
-  await prisma.user.create({
+  const user = await prisma.user.create({
     data: {
       email,
       name,
@@ -101,6 +113,12 @@ export async function registerAction(_previousState: string | undefined, formDat
       passwordHash: await hashPassword(password),
       timeZone,
     },
+  });
+
+  await recordRegistrationConsents({
+    marketingAccepted: marketingConsent === "accepted",
+    timeZone,
+    userId: user.id,
   });
 
   try {
@@ -126,6 +144,8 @@ export async function createBookingAction(formData: FormData) {
     throw new Error("Записаться на диагностику может только клиент.");
   }
 
+  assertBookingLegalConsents(formData);
+
   const bookingType = normalizeBookingType(String(formData.get("type") ?? "DIAGNOSTIC"));
   const packageTitle = bookingType === "SESSION" ? normalizePackageTitle(formData.get("packageTitle")) : null;
   const selectedSlot = parseSlotDates(formData);
@@ -134,7 +154,7 @@ export async function createBookingAction(formData: FormData) {
   await ensureUserSlotCanBeBooked(startsAt, endsAt);
   const clientTimeZone = await getClientTimeZone(userId, formData.get("timeZone"), session.user.timeZone);
 
-  await prisma.booking.create({
+  const booking = await prisma.booking.create({
     data: {
       userId,
       startsAt,
@@ -147,8 +167,135 @@ export async function createBookingAction(formData: FormData) {
     },
   });
 
+  await recordBookingConsents({
+    appointmentId: booking.id,
+    bookingKind: bookingType === "SESSION" ? "session" : "diagnostic",
+    packageTitle,
+    timeZone: clientTimeZone,
+    userId,
+  });
+
   revalidateDashboard();
   redirect("/bookings");
+}
+
+async function recordRegistrationConsents({
+  marketingAccepted,
+  timeZone,
+  userId,
+}: {
+  marketingAccepted: boolean;
+  timeZone: string;
+  userId: number;
+}) {
+  const requiredConsents: Array<{ checkboxLabel: string; consentType: ConsentType; documentCode: Parameters<typeof recordConsentEvent>[0]["documentCode"] }> = [
+    {
+      checkboxLabel: "Я принимаю условия Пользовательского соглашения",
+      consentType: "terms_acceptance",
+      documentCode: "terms",
+    },
+    {
+      checkboxLabel: "Я даю согласие на обработку персональных данных",
+      consentType: "personal_data_processing",
+      documentCode: "personal_data_consent",
+    },
+    {
+      checkboxLabel: "Я подтверждаю, что ознакомлен(а) с Политикой обработки персональных данных",
+      consentType: "privacy_policy_ack",
+      documentCode: "privacy_policy",
+    },
+  ];
+
+  if (marketingAccepted) {
+    requiredConsents.push({
+      checkboxLabel: "Я даю согласие на получение рекламных и информационных сообщений",
+      consentType: "marketing_messages",
+      documentCode: "marketing_consent",
+    });
+  }
+
+  for (const consent of requiredConsents) {
+    await recordConsentEvent({
+      action: "checkbox_acceptance",
+      buttonLabel: "Зарегистрироваться",
+      checkboxLabel: consent.checkboxLabel,
+      consentType: consent.consentType,
+      documentCode: consent.documentCode,
+      eventPayload: { source: "registration_form" },
+      stage: "registration",
+      timezone: timeZone,
+      userId,
+    });
+  }
+}
+
+function assertBookingLegalConsents(formData: FormData) {
+  const requiredConsents = [
+    ["offerAccepted", "Для записи нужно принять условия Публичной оферты."],
+    ["bookingRulesAccepted", "Для записи нужно ознакомиться с Правилами записи, переноса и отмены встреч."],
+    ["informedConsentAccepted", "Для записи нужно подтвердить Информированное согласие на психологические услуги."],
+    ["sensitiveDataConsent", "Для записи нужно дать согласие на обработку специальных категорий персональных данных."],
+  ] as const;
+
+  for (const [fieldName, errorMessage] of requiredConsents) {
+    if (String(formData.get(fieldName) ?? "") !== "accepted") {
+      throw new Error(errorMessage);
+    }
+  }
+}
+
+async function recordBookingConsents({
+  appointmentId,
+  bookingKind,
+  packageTitle,
+  timeZone,
+  userId,
+}: {
+  appointmentId: number;
+  bookingKind: "session" | "diagnostic";
+  packageTitle: string | null;
+  timeZone: string;
+  userId: number;
+}) {
+  const consents: Array<{ checkboxLabel: string; consentType: ConsentType; documentCode: Parameters<typeof recordConsentEvent>[0]["documentCode"] }> = [
+    {
+      checkboxLabel: "Я принимаю условия Публичной оферты",
+      consentType: "offer_acceptance",
+      documentCode: "offer",
+    },
+    {
+      checkboxLabel: "Я ознакомлен(а) с Правилами записи, переноса и отмены встреч",
+      consentType: "booking_rules_acceptance",
+      documentCode: "booking_rules",
+    },
+    {
+      checkboxLabel: "Я подтверждаю Информированное согласие на психологические услуги",
+      consentType: "informed_psychological_services",
+      documentCode: "informed_consent",
+    },
+    {
+      checkboxLabel: "Я даю согласие на обработку специальных категорий персональных данных",
+      consentType: "special_category_data_processing",
+      documentCode: "special_category_data_consent",
+    },
+  ];
+
+  for (const consent of consents) {
+    await recordConsentEvent({
+      action: "checkbox_acceptance",
+      appointmentId,
+      bookingKind,
+      buttonLabel: "Подтвердить запись",
+      checkboxLabel: consent.checkboxLabel,
+      consentType: consent.consentType,
+      documentCode: consent.documentCode,
+      eventPayload: { package_title: packageTitle },
+      serviceId: packageTitle ?? bookingKind,
+      stage: "booking",
+      timezone: timeZone,
+      userId,
+    });
+  }
 }
 
 export async function adminCreateBookingAction(formData: FormData) {

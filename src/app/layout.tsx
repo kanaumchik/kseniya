@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Marck_Script, Great_Vibes } from "next/font/google";
 import { Suspense } from "react";
+import { CookieBanner } from "@/components/CookieBanner";
 import { ScrollUnlockOnNavigation } from "@/components/ScrollUnlockOnNavigation";
 import "./globals.css";
 
@@ -33,6 +34,7 @@ export default function RootLayout({
           <ScrollUnlockOnNavigation />
         </Suspense>
         {children}
+        <CookieBanner />
       </body>
     </html>
   );
