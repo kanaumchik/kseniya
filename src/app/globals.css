@@ -316,6 +316,96 @@ select option {
   transform: translateY(1px);
 }
 
+.format-choice {
+  max-width: 64rem;
+}
+
+.format-choice-item {
+  overflow: hidden;
+  border: 1px solid rgba(214, 174, 82, 0.32);
+  border-radius: 0.55rem;
+  background:
+    linear-gradient(135deg, rgba(232, 197, 122, 0.055), transparent 42%),
+    rgba(8, 8, 8, 0.72);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 234, 185, 0.035),
+    0 14px 34px rgba(0, 0, 0, 0.24);
+}
+
+.format-choice-summary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1.25rem;
+  min-height: 6.5rem;
+  padding: 1rem 1.5rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.format-choice-summary::-webkit-details-marker {
+  display: none;
+}
+
+.format-choice-icon {
+  display: inline-flex;
+  width: 4.25rem;
+  height: 4.25rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(214, 174, 82, 0.38);
+  border-radius: 999px;
+  color: rgba(232, 197, 122, 0.9);
+  background: rgba(214, 174, 82, 0.035);
+}
+
+.format-choice-chevron {
+  width: 1rem;
+  height: 1rem;
+  border-right: 2px solid rgba(232, 197, 122, 0.9);
+  border-bottom: 2px solid rgba(232, 197, 122, 0.9);
+  transform: rotate(45deg);
+  transition: transform 160ms ease;
+}
+
+.format-choice-item[open] .format-choice-chevron {
+  transform: rotate(225deg);
+}
+
+.format-choice-details {
+  margin: -0.45rem 5.5rem 1.35rem 6.95rem;
+  border-top: 1px solid rgba(214, 174, 82, 0.14);
+  padding-top: 0.9rem;
+  color: rgba(255, 255, 255, 0.66);
+  font-size: 0.95rem;
+  line-height: 1.65;
+}
+
+.format-choice-note {
+  display: flex;
+  gap: 1.25rem;
+  margin-top: 1.15rem;
+  border: 1px solid rgba(232, 197, 122, 0.52);
+  border-radius: 0.5rem;
+  background:
+    linear-gradient(135deg, rgba(232, 197, 122, 0.1), transparent 48%),
+    rgba(11, 10, 8, 0.82);
+  padding: 1rem 1.25rem;
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+.format-choice-action {
+  margin-top: 1.15rem;
+  max-width: 49rem;
+}
+
+.format-choice-button {
+  width: 100%;
+  min-height: 3.55rem;
+}
+
 .section-shell {
   max-width: 80rem;
   margin-inline: auto;
@@ -432,6 +522,49 @@ select option {
   .diagnostic-header h2,
   .section-shell h2 {
     line-height: 1.08;
+  }
+
+  .format-choice {
+    max-width: none;
+  }
+
+  .format-choice-summary {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 0.85rem;
+    min-height: 8.35rem;
+    padding: 1rem 1.1rem;
+  }
+
+  .format-choice-icon {
+    width: 3.7rem;
+    height: 3.7rem;
+  }
+
+  .format-choice-icon svg {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .format-choice-chevron {
+    width: 0.85rem;
+    height: 0.85rem;
+  }
+
+  .format-choice-details {
+    margin: -0.25rem 1.1rem 1.2rem 5.65rem;
+    font-size: 0.9rem;
+    line-height: 1.55;
+  }
+
+  .format-choice-note {
+    gap: 0.9rem;
+    padding: 0.95rem 1rem;
+    font-size: 0.95rem;
+    line-height: 1.48;
+  }
+
+  .format-choice-action {
+    max-width: none;
   }
 
   .project-copy,

@@ -124,6 +124,41 @@ const faqItems = [
   ["Можно ли выбрать формат после диагностики?", "Да. Диагностика как раз помогает понять, какой формат будет наиболее подходящим: разовая сессия, сопровождение по вашему запросу или авторская программа."],
 ];
 
+const formatChoiceItems = [
+  {
+    title: "Диагностика",
+    text: "Если вы пока не понимаете, с чем именно работать - начните с диагностики",
+    icon: "person",
+  },  
+  {
+    title: "Разовая сессия",
+    text: "Если есть один точечный запрос или вы хотите попробовать метод в работе - подойдёт разовая сессия",
+    icon: "person",
+  },
+  {
+    title: "Запуск трансформации",
+    text: "Если тема объемная, но вы хотите мягко войти в процесс - подойдёт «Запуск трансформации»",
+    icon: "rocket",
+  },
+  {
+    title: "Глубина и поддержка",
+    text: "Для более глубокого внимания подойдёт «Глубина и поддержка»",
+    icon: "lotus",
+  },
+  {
+    title: "От хаоса к гармонии и порядку",
+    text: "В кризисе или периоде пересборки - «От хаоса к гармонии и порядку»",
+    details: "Этот маршрут помогает пройти острый период, вернуть опору, собрать ясность и постепенно перейти к новым действиям.",
+    icon: "spiral",
+  },
+  {
+    title: "Индивидуальное сопровождение",
+    text: "Для последовательного маршрута по теме призвания, денег или отношений - индивидуальное сопровождение по авторской программе",
+    details: "Подходит, если хочется идти по теме глубже, со структурой, поддержкой и вниманием к вашей личной динамике.",
+    icon: "mountain",
+  },
+];
+
 export function DashboardHome({ id, name, email, role, timeZone, slots, users }: DashboardHomeProps) {
   const currentUser = id && name && email ? { id, name, email } : undefined;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -396,10 +431,7 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
           <div className="flex justify-center">{renderBookingCta("Записаться на диагностику", "DIAGNOSTIC")}</div>
         </div>
 
-        <ContentBlock
-          title="Как выбрать формат"
-          text="Если вы пока не понимаете, с чем именно работать - начните с диагностики. Если есть один точечный запрос или вы хотите попробовать метод в работе - подойдёт разовая сессия. Если тема объемная, но вы хотите мягко войти в процесс - подойдёт «Запуск трансформации». Для более глубокого внимания подойдёт «Глубина и поддержка». В кризисе или периоде пересборки - «От хаоса к гармонии и порядку». Для последовательного маршрута по теме призвания, денег или отношений - индивидуальное сопровождение по авторской программе."
-        />
+        <FormatChoiceBlock cta={renderBookingCta("Записаться на диагностику", "DIAGNOSTIC", undefined, "format-choice-button")} />
       </section>
 
       <section className="section-shell" id="faq">
@@ -427,7 +459,7 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
           <div className="max-w-xl">
             <div className="grid gap-2 text-sm leading-6 text-white/66">
               <p>
-                Оператор: <span className="font-semibold text-white/82">ИП Наумчик Ксения Андреевна</span>
+                Оператор данных: <span className="font-semibold text-white/82">ИП Наумчик Ксения Андреевна</span>
               </p>
               <p>
                 ИНН <span className="font-semibold text-white/82">860105706756</span>, ОГРНИП{" "}
@@ -452,7 +484,7 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
               </p>
               <div className="mt-5 grid gap-2 text-sm leading-6 text-white/72">
                 <p className="font-semibold text-white">Экстренная помощь</p>
-                <Link className="w-fit text-lg font-semibold text-[#ff4b1f] transition hover:text-[var(--gold-light)]" href="tel:+74959895050">
+                <Link className="w-fit text-lg font-semibold text-white transition hover:text-[var(--gold-light)]" href="tel:+74959895050">
                   +7 (495) 989-50-50
                 </Link>
                 <p className="max-w-sm text-white/76">Горячая линия психологической помощи МЧС России</p>
@@ -521,6 +553,67 @@ function ContentBlock({ title, text }: { title: string; text: string }) {
       <p className="mt-3 text-base leading-8 text-white/72">{text}</p>
     </div>
   );
+}
+
+function FormatChoiceBlock({ cta }: { cta: ReactNode }) {
+  return (
+    <div className="format-choice">
+      <div className="max-w-4xl">
+        <h3 className="font-serif text-3xl text-[var(--gold-light)] sm:text-4xl">Как выбрать формат</h3>
+        <p className="mt-4 max-w-3xl text-base leading-8 text-white/72 sm:text-lg">
+          Если вы пока не понимаете, с чем именно работать - начните с диагностики.
+        </p>
+      </div>
+
+      <div className="mt-6 grid gap-3 sm:mt-7">
+        {formatChoiceItems.map((item) => (
+          <details className="format-choice-item" key={item.title}>
+            <summary className="format-choice-summary">
+              <span className="format-choice-icon">
+                <FormatChoiceIcon name={item.icon} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-base font-semibold leading-6 text-[var(--gold-light)] sm:text-lg">{item.title}</span>
+                <span className="mt-1 block text-sm leading-6 text-white/70 sm:text-base sm:leading-7">{item.text}</span>
+              </span>
+              <span className="format-choice-chevron" aria-hidden="true" />
+            </summary>
+            <div className="format-choice-details">{item.details}</div>
+          </details>
+        ))}
+      </div>
+
+      <div className="format-choice-note">
+        <SparkleIcon className="mt-1 h-7 w-7 shrink-0 text-[var(--gold-light)]" />
+        <p>
+          Вы можете выбрать формат, который откликается именно вам. Если сомневаетесь - начните с диагностики, на ней мы
+          вместе определим, что будет наиболее полезно и актуально сейчас.
+        </p>
+      </div>
+
+      <div className="format-choice-action">{cta}</div>
+    </div>
+  );
+}
+
+function FormatChoiceIcon({ name }: { name: string }) {
+  if (name === "rocket") {
+    return <RocketIcon />;
+  }
+
+  if (name === "lotus") {
+    return <LotusIcon />;
+  }
+
+  if (name === "spiral") {
+    return <SpiralIcon />;
+  }
+
+  if (name === "mountain") {
+    return <MountainIcon />;
+  }
+
+  return <PersonIcon />;
 }
 
 function PackageCard({
@@ -738,6 +831,64 @@ function HourglassIcon({ className }: { className?: string }) {
       <circle cx="24" cy="24" r="22" stroke="currentColor" strokeWidth="1.5" opacity="0.55" />
       <path d="M14 6h20M14 42h20M18 6v7.5c0 3.4 2 6.5 5.1 7.9l1.8.8-1.8.8A8.7 8.7 0 0 0 18 31.5V42M30 6v7.5c0 3.4-2 6.5-5.1 7.9l-1.8.8 1.8.8A8.7 8.7 0 0 1 30 31.5V42" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
       <path d="M20.5 34.5h7M20.5 13.5h7M21.5 17.5h5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" opacity="0.55" />
+    </svg>
+  );
+}
+
+function PersonIcon() {
+  return (
+    <svg aria-hidden="true" className="size-9" fill="none" viewBox="0 0 48 48">
+      <path d="M24 21.5a5.8 5.8 0 1 0 0-11.6 5.8 5.8 0 0 0 0 11.6Z" stroke="currentColor" strokeWidth="2" />
+      <path d="M18.2 28.2c1.1-2.7 3-4.1 5.8-4.1s4.7 1.4 5.8 4.1" stroke="currentColor" strokeLinecap="round" strokeWidth="2" />
+      <path d="M16.2 20.2c-3.7 2.7-6.1 6.9-6.1 11.5 0 5.2 6.2 7.1 13.9 7.1s13.9-1.9 13.9-7.1c0-4.6-2.4-8.8-6.1-11.5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+      <path d="M16 34.4h16" stroke="currentColor" strokeLinecap="round" strokeWidth="2" />
+    </svg>
+  );
+}
+
+function RocketIcon() {
+  return (
+    <svg aria-hidden="true" className="size-9" fill="none" viewBox="0 0 48 48">
+      <path d="M28.5 8.8c4.8-1.7 8.7-.7 10.7.2.9 2 1.9 5.9.2 10.7-1.7 5-6.1 9.9-13.3 14.9l-8.4-8.4c5-7.2 9.9-11.7 14.8-13.4Z" stroke="currentColor" strokeLinejoin="round" strokeWidth="2" />
+      <path d="M18.2 26.6 10 28.2l5.6-8.4M25.4 33.8 23.8 42l8.4-5.6M30.6 17.4l-8 8" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+      <path d="M32.2 20.5a2.6 2.6 0 1 0 0-5.2 2.6 2.6 0 0 0 0 5.2Z" stroke="currentColor" strokeWidth="2" />
+    </svg>
+  );
+}
+
+function LotusIcon() {
+  return (
+    <svg aria-hidden="true" className="size-9" fill="none" viewBox="0 0 48 48">
+      <path d="M24 35.8c-5.9-4.3-8.8-8.9-8.8-13.8 0-4.1 2.2-7.5 4.5-9.8 1.9 2.1 3.3 4.5 4.3 7.1 1-2.6 2.4-5 4.3-7.1 2.3 2.3 4.5 5.7 4.5 9.8 0 4.9-2.9 9.5-8.8 13.8Z" stroke="currentColor" strokeLinejoin="round" strokeWidth="2" />
+      <path d="M19.8 33.8c-6.8-.9-11-4-12.6-9.2 3.4-.8 6.3-.5 8.7.7M28.2 33.8c6.8-.9 11-4 12.6-9.2-3.4-.8-6.3-.5-8.7.7M14.4 37.8h19.2" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+    </svg>
+  );
+}
+
+function SpiralIcon() {
+  return (
+    <svg aria-hidden="true" className="size-9" fill="none" viewBox="0 0 48 48">
+      <path d="M24 39.5c8.6 0 15.5-6.9 15.5-15.5S32.6 8.5 24 8.5 8.5 15.4 8.5 24 15.4 39.5 24 39.5Z" stroke="currentColor" strokeWidth="2" />
+      <path d="M24 33.3a9.3 9.3 0 1 0-9.3-9.3 6.4 6.4 0 1 0 6.4-6.4" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+      <path d="M24 29a5 5 0 1 0-5-5" stroke="currentColor" strokeLinecap="round" strokeWidth="2" />
+    </svg>
+  );
+}
+
+function MountainIcon() {
+  return (
+    <svg aria-hidden="true" className="size-9" fill="none" viewBox="0 0 48 48">
+      <path d="m6.8 37.8 11.6-21.1 7.2 12.1 4.8-7.4 10.8 16.4H6.8Z" stroke="currentColor" strokeLinejoin="round" strokeWidth="2" />
+      <path d="m15.8 21.5 3.8 3.3 3.4-2.4M27.8 25.6l3.3 2.4 2.5-1.7" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+      <path d="M31.6 9.8v5.8M28.7 12.7h5.8" stroke="currentColor" strokeLinecap="round" strokeWidth="2" />
+    </svg>
+  );
+}
+
+function SparkleIcon({ className }: { className?: string }) {
+  return (
+    <svg aria-hidden="true" className={className} fill="none" viewBox="0 0 32 32">
+      <path d="M16 3.5c1.1 6 3.5 9.4 9.5 10.5-6 1.1-8.4 4.5-9.5 10.5C14.9 18.5 12.5 15.1 6.5 14 12.5 12.9 14.9 9.5 16 3.5Z" stroke="currentColor" strokeLinejoin="round" strokeWidth="1.8" />
     </svg>
   );
 }
