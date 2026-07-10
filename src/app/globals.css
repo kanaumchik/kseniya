@@ -110,6 +110,12 @@ select option {
   color: var(--gold-light);
 }
 
+@media (min-width: 768px) {
+  .mobile-menu-button {
+    display: none;
+  }
+}
+
 .profile-button,
 .auth-tab {
   border-radius: 0.375rem;

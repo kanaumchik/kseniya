@@ -265,7 +265,7 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
           </div>
 
           <button
-            className="icon-button inline-flex 2xl:hidden"
+            className="icon-button mobile-menu-button"
             type="button"
             aria-label={isMobileMenuOpen ? "Закрыть меню" : "Открыть меню"}
             aria-expanded={isMobileMenuOpen}
@@ -278,7 +278,7 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
 
       {isMobileMenuOpen ? (
         <div
-          className="fixed inset-x-0 top-[4.25rem] z-50 border-b border-white/[0.08] bg-[#050505]/98 px-4 pb-5 pt-3 backdrop-blur-xl 2xl:hidden"
+          className="fixed inset-x-0 top-[4.25rem] z-50 border-b border-white/[0.08] bg-[#050505]/98 px-4 pb-5 pt-3 backdrop-blur-xl md:hidden"
           role="presentation"
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) {
