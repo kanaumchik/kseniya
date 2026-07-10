@@ -1,4 +1,4 @@
-﻿CREATE TABLE "analytics_events" (
+CREATE TABLE "analytics_events" (
   "id" UUID NOT NULL DEFAULT gen_random_uuid(),
   "event_type" TEXT NOT NULL,
   "event_name" TEXT NOT NULL,
