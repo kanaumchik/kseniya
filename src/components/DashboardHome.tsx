@@ -538,18 +538,20 @@ function PackageCard({
       <h4 className="font-serif text-xl text-[var(--gold-light)]">{item.title}</h4>
       {item.mobileBreakAfter ? (
         <>
-          <div className="sm:hidden">
-            <p className="text-sm leading-6 text-white/72">{isOpen ? item.text : previewText}</p>
-            {!isOpen ? (
-              <button
-                className="mt-1 inline border-0 bg-transparent p-0 text-[var(--gold-light)] underline decoration-[rgba(216,179,90,0.7)] decoration-1 underline-offset-4 transition hover:text-white"
-                style={{ font: "inherit" }}
-                type="button"
-                onClick={() => setIsOpen(true)}
-              >
-                Далее
-              </button>
-            ) : null}
+          <div>
+            <p className="text-sm leading-6 text-white/72">
+              {isOpen ? item.text : previewText}
+              {!isOpen ? (
+                <button
+                  className="ml-1 inline border-0 bg-transparent p-0 align-baseline text-[var(--gold-light)] underline decoration-[rgba(216,179,90,0.7)] decoration-1 underline-offset-4 transition hover:text-white"
+                  style={{ font: "inherit" }}
+                  type="button"
+                  onClick={() => setIsOpen(true)}
+                >
+                  Далее
+                </button>
+              ) : null}
+            </p>
             {isOpen ? (
               <>
                 <ul className="mt-3 grid gap-1 text-sm text-white/70">
@@ -574,19 +576,6 @@ function PackageCard({
                 </button>
               </>
             ) : null}
-          </div>
-          <div className="hidden sm:block">
-            <p className="text-sm leading-6 text-white/72">{item.text}</p>
-            <ul className="mt-3 grid gap-1 text-sm text-white/70">
-              {item.details.map((detail) => (
-                <li key={detail}>- {detail}</li>
-              ))}
-            </ul>
-            <div className="mt-3 grid gap-1 text-sm font-semibold text-white/86">
-              {item.meta.map((line) => (
-                <p key={line}>{line}</p>
-              ))}
-            </div>
           </div>
         </>
       ) : (
@@ -629,29 +618,31 @@ function MobileReadMoreText({
 
   return (
     <>
-      <div className="sm:hidden">
-        <p className={className}>{isOpen ? text : previewText}</p>
-        {!isOpen ? (
-          <button
-            className="mt-1 inline border-0 bg-transparent p-0 text-[var(--gold-light)] underline decoration-[rgba(216,179,90,0.7)] decoration-1 underline-offset-4 transition hover:text-white"
-            style={{ font: "inherit" }}
-            type="button"
-            onClick={() => setIsOpen(true)}
-          >
-            Далее
-          </button>
-        ) : (
+      <div>
+        <p className={className}>
+          {isOpen ? text : previewText}
+          {!isOpen ? (
+            <button
+              className="ml-1 inline border-0 bg-transparent p-0 align-baseline text-[var(--gold-light)] underline decoration-[rgba(216,179,90,0.7)] decoration-1 underline-offset-4 transition hover:text-white"
+              style={{ font: "inherit" }}
+              type="button"
+              onClick={() => setIsOpen(true)}
+            >
+              Далее
+            </button>
+          ) : null}
+        </p>
+        {isOpen ? (
           <button
             className="mt-2 inline border-0 bg-transparent p-0 text-[var(--gold-light)] underline decoration-[rgba(216,179,90,0.7)] decoration-1 underline-offset-4 transition hover:text-white"
             style={{ font: "inherit" }}
             type="button"
             onClick={() => setIsOpen(false)}
           >
-            Свернуть
-          </button>
-        )}
+          Свернуть
+        </button>
+      ) : null}
       </div>
-      <p className={`hidden sm:block ${className}`}>{text}</p>
     </>
   );
 }
@@ -682,7 +673,7 @@ function MobileReadMoreParagraphs({
 
   return (
     <>
-      <div className="sm:hidden">
+      <div>
         {(isOpen ? paragraphs : previewParagraphs).map((paragraph, index, visibleParagraphs) => {
           const isLastVisibleParagraph = index === visibleParagraphs.length - 1;
 
@@ -709,16 +700,9 @@ function MobileReadMoreParagraphs({
             type="button"
             onClick={() => setIsOpen(false)}
           >
-            Свернуть
-          </button>
-        ) : null}
-      </div>
-      <div className="hidden sm:block">
-        {paragraphs.map((paragraph) => (
-          <p key={paragraph} className={className}>
-            {paragraph}
-          </p>
-        ))}
+          Свернуть
+        </button>
+      ) : null}
       </div>
     </>
   );
