@@ -406,6 +406,194 @@ select option {
   min-height: 3.55rem;
 }
 
+.insight-section {
+  position: relative;
+  overflow: hidden;
+  background: #050505;
+}
+
+.insight-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(5, 5, 5, 0.96), rgba(5, 5, 5, 0.48) 48%, rgba(5, 5, 5, 0.74)),
+    linear-gradient(180deg, rgba(5, 5, 5, 0.68), rgba(5, 5, 5, 0.9)),
+    url("/images/background-prompt.png") center center / cover no-repeat;
+  opacity: 1;
+}
+
+.insight-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 58% 34%, rgba(232, 197, 122, 0.44) 0 1px, transparent 1.4px),
+    radial-gradient(circle at 61% 43%, rgba(232, 197, 122, 0.34) 0 1px, transparent 1.6px),
+    radial-gradient(circle at 52% 51%, rgba(232, 197, 122, 0.28) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 67% 28%, rgba(232, 197, 122, 0.32) 0 1px, transparent 1.5px);
+  background-size: 42px 42px, 58px 58px, 76px 76px, 96px 96px;
+  mask-image: radial-gradient(ellipse at 60% 42%, #000 0 34%, transparent 66%);
+  opacity: 0.38;
+  pointer-events: none;
+}
+
+.insight-title {
+  width: max-content;
+  max-width: 100%;
+  white-space: nowrap;
+  font-size: clamp(2.1rem, 2.45vw, 3.05rem);
+}
+
+.insight-button {
+  min-width: min(100%, 21rem);
+}
+
+.insight-copy {
+  display: grid;
+  gap: 0.72rem;
+  margin-top: 1.25rem;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.insight-card-wrap {
+  display: flex;
+  min-height: 17.5rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.insight-card {
+  position: relative;
+  width: min(100%, 36rem);
+  min-height: 17.5rem;
+  display: grid;
+  align-content: center;
+  border: 1px solid rgba(232, 197, 122, 0.62);
+  border-radius: 0.7rem;
+  background:
+    linear-gradient(160deg, rgba(16, 15, 13, 0.76), rgba(5, 5, 5, 0.76)),
+    url("/images/background-prompt.png") 68% center / auto 170% no-repeat;
+  padding: 3rem 3.1rem 2.55rem;
+  box-shadow:
+    0 0 42px rgba(214, 174, 82, 0.24),
+    inset 0 0 42px rgba(255, 229, 163, 0.055);
+  text-align: center;
+}
+
+.insight-card::before {
+  content: "";
+  position: absolute;
+  left: 15%;
+  right: 15%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(232, 197, 122, 0.55), transparent);
+}
+
+.insight-card::before {
+  top: 1.65rem;
+}
+
+.insight-card-text {
+  font-family: var(--font-cormorant), serif;
+  color: var(--gold-light);
+  max-width: 29rem;
+  margin-inline: auto;
+  font-size: clamp(1.45rem, 1.75vw, 2rem);
+  line-height: 1.36;
+}
+
+.insight-card-sparkle {
+  width: 1.2rem;
+  height: 1.2rem;
+  color: var(--gold-light);
+}
+
+.insight-card-sparkle.top {
+  position: absolute;
+  top: 1.1rem;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.insight-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.35rem;
+  margin-top: 0.9rem;
+  max-width: 100%;
+  margin-inline: 0;
+}
+
+.insight-step {
+  display: grid;
+  grid-template-columns: 4.15rem 1px minmax(0, 1fr);
+  gap: 0.9rem;
+  align-items: stretch;
+  min-height: 10.35rem;
+  border: 1px solid rgba(214, 174, 82, 0.22);
+  border-radius: 0.42rem;
+  background:
+    linear-gradient(135deg, rgba(232, 197, 122, 0.028), transparent 50%),
+    rgba(5, 5, 5, 0.74);
+  padding: 1.45rem 1.4rem 1.35rem 1rem;
+}
+
+.insight-step-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-cormorant), serif;
+  color: var(--gold-light);
+  font-size: 3.65rem;
+  line-height: 1;
+}
+
+.insight-step-line {
+  width: 1px;
+  min-height: 6.4rem;
+  align-self: center;
+  background: rgba(232, 197, 122, 0.25);
+}
+
+.insight-step-icon {
+  display: inline-flex;
+  width: 5.15rem;
+  min-width: 5.15rem;
+  height: 5.15rem;
+  align-items: center;
+  justify-content: center;
+  margin-top: -1rem;
+  color: rgba(232, 197, 122, 0.86);
+}
+
+.insight-step-image-icon {
+  width: 5.15rem;
+  height: 5.15rem;
+  object-fit: contain;
+  opacity: 0.9;
+}
+
+.insight-step-heading {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.4rem;
+  align-items: start;
+  font-family: var(--font-cormorant), serif;
+  color: rgba(232, 197, 122, 0.86);
+  font-size: 1.16rem;
+  line-height: 1.2;
+}
+
+.insight-step-heading + span {
+  max-width: 18.5rem;
+  margin-top: 0.85rem;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
 .section-shell {
   max-width: 80rem;
   margin-inline: auto;
@@ -565,6 +753,96 @@ select option {
 
   .format-choice-action {
     max-width: none;
+  }
+
+  .insight-bg {
+    background:
+      linear-gradient(180deg, rgba(5, 5, 5, 0.92), rgba(5, 5, 5, 0.62) 42%, rgba(5, 5, 5, 0.92)),
+      url("/images/background-prompt.png") 57% center / auto 100% no-repeat;
+  }
+
+  .insight-title {
+    font-size: clamp(1.55rem, 6.9vw, 2.35rem);
+    letter-spacing: 0;
+  }
+
+  .insight-button {
+    width: 100%;
+  }
+
+  .insight-card-wrap {
+    min-height: 15rem;
+    justify-content: stretch;
+  }
+
+  .insight-card {
+    min-height: 17.5rem;
+    padding: 2.7rem 1.35rem 2.5rem;
+    border-radius: 0.55rem;
+    background:
+      linear-gradient(160deg, rgba(16, 15, 13, 0.78), rgba(5, 5, 5, 0.8)),
+      url("/images/background-prompt.png") 70% center / auto 180% no-repeat;
+  }
+
+  .insight-card::before {
+    top: 1.35rem;
+  }
+
+  .insight-card::after {
+    bottom: 2.35rem;
+  }
+
+  .insight-card-text {
+    font-size: 1.32rem;
+    line-height: 1.38;
+  }
+
+  .insight-card-footer {
+    font-size: 0.86rem;
+  }
+
+  .insight-steps {
+    grid-template-columns: 1fr;
+    gap: 0.9rem;
+  }
+
+  .insight-step {
+    grid-template-columns: 3rem 1px minmax(0, 1fr);
+    min-height: 0;
+    gap: 0.75rem;
+    padding: 1.25rem 1.1rem;
+  }
+
+  .insight-step-icon {
+    width: 4rem;
+    min-width: 4rem;
+    height: 4rem;
+    margin-top: -0.8rem;
+  }
+
+  .insight-step-image-icon {
+    width: 4rem;
+    height: 4rem;
+  }
+
+  .insight-step-number {
+    font-size: 2.5rem;
+  }
+
+  .insight-step-line {
+    min-height: 5.6rem;
+  }
+
+  .insight-step-heading {
+    gap: 0.65rem;
+    font-size: 1.12rem;
+    line-height: 1.25;
+  }
+
+  .insight-step-heading + span {
+    max-width: none;
+    font-size: 0.9rem;
+    line-height: 1.55;
   }
 
   .project-copy,

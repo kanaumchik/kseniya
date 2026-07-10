@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
@@ -162,6 +163,9 @@ const formatChoiceItems = [
 export function DashboardHome({ id, name, email, role, timeZone, slots, users }: DashboardHomeProps) {
   const currentUser = id && name && email ? { id, name, email } : undefined;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [insightHint, setInsightHint] = useState<string | null>(null);
+  const [isInsightLoading, setIsInsightLoading] = useState(false);
+  const [insightError, setInsightError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isMobileMenuOpen) {
@@ -210,6 +214,32 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
     );
   }
 
+  async function handleGetInsight() {
+    setIsInsightLoading(true);
+    setInsightError(null);
+
+    try {
+      const params = insightHint ? `?exclude=${encodeURIComponent(insightHint)}` : "";
+      const response = await fetch(`/api/hints${params}`, { cache: "no-store" });
+      const data = (await response.json()) as { hint?: string; error?: string };
+
+      if (!response.ok || !data.hint) {
+        throw new Error(data.error || "Не удалось получить подсказку");
+      }
+
+      setInsightHint(data.hint);
+    } catch {
+      setInsightError("Сейчас не удалось получить подсказку. Попробуйте ещё раз.");
+    } finally {
+      setIsInsightLoading(false);
+    }
+  }
+
+  function scrollToInsight() {
+    setIsMobileMenuOpen(false);
+    document.getElementById("insight")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   return (
     <main className="min-h-screen bg-[var(--background)] pb-24 text-white lg:pb-0">
       <header className="sticky top-0 z-40 border-b border-white/[0.08] bg-[#050505]/90 backdrop-blur-xl">
@@ -232,7 +262,7 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
           </nav>
 
           <div className="hidden shrink-0 items-center justify-end gap-2 sm:gap-3 2xl:flex">
-            <button className="nav-link insight-nav-link hidden text-sm lg:inline-flex" type="button">
+            <button className="nav-link insight-nav-link hidden text-sm lg:inline-flex" type="button" onClick={scrollToInsight}>
               <span aria-hidden="true">✦</span>
               <span>Получить подсказку</span>
             </button>
@@ -276,6 +306,13 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
             </nav>
 
             <div className="grid gap-2 border-t border-white/[0.08] pt-3">
+              <button
+                className="rounded-md border border-[rgba(214,174,82,0.28)] bg-[rgba(214,174,82,0.08)] px-4 py-3 text-left text-sm font-semibold text-[var(--gold-light)] transition hover:border-[var(--gold)] hover:text-white"
+                type="button"
+                onClick={scrollToInsight}
+              >
+                ✦ Получить подсказку
+              </button>
               {role ? (
                 <>
                   <Link className="rounded-md border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-sm font-medium text-white/86 transition hover:border-[var(--gold)] hover:text-[var(--gold-light)]" href="/profile" onClick={() => setIsMobileMenuOpen(false)}>
@@ -433,6 +470,13 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
 
         <FormatChoiceBlock cta={renderBookingCta("Записаться на диагностику", "DIAGNOSTIC", undefined, "format-choice-button")} />
       </section>
+
+      <InsightSection
+        error={insightError}
+        hint={insightHint}
+        isLoading={isInsightLoading}
+        onGetInsight={handleGetInsight}
+      />
 
       <section className="section-shell" id="faq">
         <h2 className="font-serif text-3xl text-[var(--gold-light)] sm:text-4xl">FAQ</h2>
@@ -614,6 +658,99 @@ function FormatChoiceIcon({ name }: { name: string }) {
   }
 
   return <PersonIcon />;
+}
+
+function InsightSection({
+  hint,
+  isLoading,
+  error,
+  onGetInsight,
+}: {
+  hint: string | null;
+  isLoading: boolean;
+  error: string | null;
+  onGetInsight: () => void;
+}) {
+  return (
+    <section className="insight-section border-t border-[var(--line)]" id="insight">
+      <div className="insight-bg" aria-hidden="true" />
+      <div className="relative z-10 mx-auto grid max-w-7xl gap-6 px-6 py-12 lg:grid-cols-[0.92fr_1.08fr] lg:px-10 lg:py-16">
+        <div className="max-w-xl">
+          <h2 className="insight-title font-serif uppercase leading-[1.05] text-[var(--gold-light)]">
+            Получить подсказку
+          </h2>
+          <div className="insight-copy">
+            <p>
+              Иногда нам не нужен большой ответ, достаточно одной фразы, которая вернёт внимание, поможет остановиться,
+              выдохнуть и увидеть ситуацию иначе.
+            </p>
+            <p>
+              Задайте внутри себя вопрос или просто подумайте о том, что сейчас волнует. Затем нажмите на кнопку - и
+              получите короткую подсказку.
+            </p>
+            <p>
+              Это не предсказание и не готовое решение. Это фраза для внутренней работы с возникающими образами и
+              связями в нашем подсознании.
+            </p>
+          </div>
+          <button className="hero-gold-button insight-button mt-5" type="button" onClick={onGetInsight} disabled={isLoading}>
+            {isLoading ? "Ищу подсказку" : "Получить подсказку"}
+          </button>
+          {error ? <p className="mt-4 text-sm leading-6 text-[#ff8a63]">{error}</p> : null}
+        </div>
+
+        <div className="insight-card-wrap">
+          {hint ? (
+            <article className="insight-card">
+              <SparkleIcon className="insight-card-sparkle top" />
+              <p className="insight-card-text">{hint}</p>
+            </article>
+          ) : null}
+        </div>
+
+        <div className="insight-steps lg:col-span-2">
+          <InsightStep
+            icon={<PromptImageIcon alt="" src="/images/head-for-prompt-trimmed.png" />}
+            number="1."
+            title="Сформулируйте вопрос внутри себя"
+            text="Подумайте о том, что сейчас важно и волнует именно вас."
+          />
+          <InsightStep
+            icon={<PromptImageIcon alt="" src="/images/star-for-prompt-trimmed.png" />}
+            number="2."
+            title="Получите фразу и заметьте первый отклик"
+            text="Прочитайте подсказку и обратите внимание на свои ощущения, мысли и образы."
+          />
+          <InsightStep
+            icon={<PromptImageIcon alt="" src="/images/leaf-for-prompt-trimmed.png" />}
+            number="3."
+            title="О чем эта фраза для вас?"
+            text="Прислушайтесь: что эта фраза подсветила именно сейчас? Какой один маленький шаг она предлагает сделать?"
+          />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function InsightStep({ number, icon, title, text }: { number: string; icon: ReactNode; title: string; text: string }) {
+  return (
+    <article className="insight-step">
+      <span className="insight-step-number">{number}</span>
+      <span className="insight-step-line" aria-hidden="true" />
+      <span className="min-w-0">
+        <span className="insight-step-heading">
+          <span className="insight-step-icon">{icon}</span>
+          <span>{title}</span>
+        </span>
+        <span className="mt-3 block text-sm leading-6 text-white/66">{text}</span>
+      </span>
+    </article>
+  );
+}
+
+function PromptImageIcon({ src, alt }: { src: string; alt: string }) {
+  return <Image alt={alt} className="insight-step-image-icon" height={110} src={src} width={110} />;
 }
 
 function PackageCard({
@@ -892,3 +1029,5 @@ function SparkleIcon({ className }: { className?: string }) {
     </svg>
   );
 }
+
+
