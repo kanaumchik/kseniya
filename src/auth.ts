@@ -27,6 +27,7 @@ declare module "@auth/core/jwt" {
 }
 
 const nextAuth = NextAuth({
+  trustHost: true,
   session: { strategy: "jwt" },
   secret: process.env.AUTH_SECRET ?? "local-development-auth-secret-change-before-production",
   pages: {
