@@ -128,34 +128,32 @@ const faqItems = [
 const formatChoiceItems = [
   {
     title: "Диагностика",
-    text: "Если вы пока не понимаете, с чем именно работать - начните с диагностики",
-    icon: "person",
+    text: "Выбирайте диагностику, если пока сложно сформулировать запрос, понять причины происходящего и определить, с чего начать работу",
+    icon: "magnifier",
   },  
   {
     title: "Разовая сессия",
-    text: "Если есть один точечный запрос или вы хотите попробовать метод в работе - подойдёт разовая сессия",
+    text: "Подойдёт, если у вас есть один конкретный запрос, который хочется проработать за одну встречу, или вы хотите познакомиться с моим методом",
     icon: "person",
   },
   {
     title: "Запуск трансформации",
-    text: "Если тема объемная, но вы хотите мягко войти в процесс - подойдёт «Запуск трансформации»",
+    text: "Выбирайте этот формат, если одной встречи недостаточно, но вы пока не готовы к длительному сопровождению и хотите сделать первые устойчивые шаги к изменениям",
     icon: "rocket",
   },
   {
     title: "Глубина и поддержка",
-    text: "Для более глубокого внимания подойдёт «Глубина и поддержка»",
+    text: "Подойдёт, если проблема повторяется, затрагивает несколько сфер жизни или требует более глубокой работы с внутренними причинами и привычными сценариями",
     icon: "lotus",
   },
   {
     title: "От хаоса к гармонии и порядку",
-    text: "В кризисе или периоде пересборки - «От хаоса к гармонии и порядку»",
-    details: "Этот маршрут помогает пройти острый период, вернуть опору, собрать ясность и постепенно перейти к новым действиям.",
+    text: "Выбирайте этот формат, если вы переживаете кризис, период перемен или внутреннюю перегрузку и хотите вернуть ясность, опору и порядок в жизни",
     icon: "spiral",
   },
   {
-    title: "Индивидуальное сопровождение",
-    text: "Для последовательного маршрута по теме призвания, денег или отношений - индивидуальное сопровождение по авторской программе",
-    details: "Подходит, если хочется идти по теме глубже, со структурой, поддержкой и вниманием к вашей личной динамике.",
+    title: "Авторские программы",
+    text: "Подойдут, если вы хотите пройти последовательный маршрут по теме призвания, денег или отношений и получить поддержку на всём пути изменений",
     icon: "mountain",
   },
 ];
@@ -396,7 +394,7 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
           <h2 className="font-serif text-3xl text-[var(--gold-light)] sm:text-4xl">Обо мне</h2>
         </div>
         <div className="about-copy">
-          <MobileReadMoreParagraphs className="" mobileBreakAfter="для больших аудиторий" paragraphs={aboutParagraphs} />
+          <MobileReadMoreParagraphs className="" mobileBreakAfter="проходить периоды изменений" paragraphs={aboutParagraphs} />
         </div>
       </section>
 
@@ -420,16 +418,18 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
             title="Диагностика"
             text="Первая встреча, на которой мы разбираем вашу текущую ситуацию, желаемую точку и то, что мешает перейти к изменениям. 
 Подходит, если вы проживаете кризис, внутренний тупик, повторяющийся сценарий или чувствуете, что хотите большего, но пока не понимаете, как к этому подойти. 
-На диагностике вы получаете первый контакт с методом, больше ясности по запросу и возможный вектор дальнейшей работы. Продолжительность: 60 минут. Стоимость: 0 рублей."
+На диагностике вы получаете первый контакт с методом, больше ясности по запросу и возможный вектор дальнейшей работы."
             mobileBreakAfter="как к этому подойти"
+            facts={["Продолжительность: 60 минут", "Стоимость: 0 рублей"]}
             cta={renderBookingCta("ЗАПИСАТЬСЯ", "DIAGNOSTIC")}
           />
           <ServiceCard
             title="Сессия"
             text="Глубокая работа с конкретным запросом: отношения, деньги, кризис, внутренний конфликт или состояние, с которым не получается справиться самостоятельно. 
 Мы смотрим, как устроена внутренняя конструкция запроса, что удерживает напряжение и где возможен новый шаг. Делаем ту работу, которая возможна на сегодняшний день в безопасном для вас режиме. 
-Подходит тем, кто пока не готов к сопровождению, но хочет глубоко разобрать одну важную тему. Продолжительность: 90 минут. Стоимость: 4000 рублей."
+Подходит тем, кто пока не готов к сопровождению, но хочет глубоко разобрать одну важную тему."
             mobileBreakAfter="где возможен новый шаг"
+            facts={["Продолжительность: 90 минут", "Стоимость: 4000 рублей"]}
             cta={renderBookingCta("ЗАПИСАТЬСЯ", "SESSION")}
           />
         </div>
@@ -468,7 +468,7 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
           <div className="flex justify-center">{renderBookingCta("Записаться на диагностику", "DIAGNOSTIC")}</div>
         </div>
 
-        <FormatChoiceBlock cta={renderBookingCta("Записаться на диагностику", "DIAGNOSTIC", undefined, "format-choice-button")} />
+        <FormatChoiceBlock />
       </section>
 
       <InsightSection
@@ -575,16 +575,31 @@ function ServiceCard({
   text,
   cta,
   mobileBreakAfter,
+  facts,
 }: {
   title: string;
   text: string;
   cta: ReactNode;
   mobileBreakAfter?: string;
+  facts?: string[];
 }) {
   return (
     <article className="gold-card grid gap-4 p-5">
       <h3 className="font-serif text-2xl text-[var(--gold-light)]">{title}</h3>
-      <MobileReadMoreText className="text-sm leading-7 text-white/74" mobileBreakAfter={mobileBreakAfter} text={text} />
+      <MobileReadMoreText
+        className="text-sm leading-7 text-white/74"
+        expandedContent={
+          facts ? (
+            <div className="service-card-facts">
+              {facts.map((fact) => (
+                <p key={fact}>{fact}</p>
+              ))}
+            </div>
+          ) : undefined
+        }
+        mobileBreakAfter={mobileBreakAfter}
+        text={text}
+      />
       <div>{cta}</div>
     </article>
   );
@@ -599,20 +614,17 @@ function ContentBlock({ title, text }: { title: string; text: string }) {
   );
 }
 
-function FormatChoiceBlock({ cta }: { cta: ReactNode }) {
+function FormatChoiceBlock() {
   return (
     <div className="format-choice">
       <div className="max-w-4xl">
         <h3 className="font-serif text-3xl text-[var(--gold-light)] sm:text-4xl">Как выбрать формат</h3>
-        <p className="mt-4 max-w-3xl text-base leading-8 text-white/72 sm:text-lg">
-          Если вы пока не понимаете, с чем именно работать - начните с диагностики.
-        </p>
       </div>
 
       <div className="mt-6 grid gap-3 sm:mt-7">
         {formatChoiceItems.map((item) => (
-          <details className="format-choice-item" key={item.title}>
-            <summary className="format-choice-summary">
+          <article className="format-choice-item" key={item.title}>
+            <div className="format-choice-summary">
               <span className="format-choice-icon">
                 <FormatChoiceIcon name={item.icon} />
               </span>
@@ -620,27 +632,19 @@ function FormatChoiceBlock({ cta }: { cta: ReactNode }) {
                 <span className="block text-base font-semibold leading-6 text-[var(--gold-light)] sm:text-lg">{item.title}</span>
                 <span className="mt-1 block text-sm leading-6 text-white/70 sm:text-base sm:leading-7">{item.text}</span>
               </span>
-              <span className="format-choice-chevron" aria-hidden="true" />
-            </summary>
-            <div className="format-choice-details">{item.details}</div>
-          </details>
+            </div>
+          </article>
         ))}
       </div>
-
-      <div className="format-choice-note">
-        <SparkleIcon className="mt-1 h-7 w-7 shrink-0 text-[var(--gold-light)]" />
-        <p>
-          Вы можете выбрать формат, который откликается именно вам. Если сомневаетесь - начните с диагностики, на ней мы
-          вместе определим, что будет наиболее полезно и актуально сейчас.
-        </p>
-      </div>
-
-      <div className="format-choice-action">{cta}</div>
     </div>
   );
 }
 
 function FormatChoiceIcon({ name }: { name: string }) {
+  if (name === "magnifier") {
+    return <MagnifierIcon />;
+  }
+
   if (name === "rocket") {
     return <RocketIcon />;
   }
@@ -764,7 +768,7 @@ function PackageCard({
   const previewText = item.mobileBreakAfter ? makePreviewText(item.text, item.mobileBreakAfter) : item.text;
 
   return (
-    <article className="gold-card grid gap-3 p-5">
+    <article className="gold-card package-card flex h-full flex-col gap-3 p-5">
       <h4 className="font-serif text-xl text-[var(--gold-light)]">{item.title}</h4>
       {item.mobileBreakAfter ? (
         <>
@@ -811,7 +815,7 @@ function PackageCard({
       ) : (
         <MobileReadMoreText className="text-sm leading-6 text-white/72" mobileBreakAfter={item.mobileBreakAfter} text={item.text} />
       )}
-      <div>{cta}</div>
+      <div className="package-card-action mt-auto">{cta}</div>
     </article>
   );
 }
@@ -834,16 +838,23 @@ function MobileReadMoreText({
   text,
   mobileBreakAfter,
   className,
+  expandedContent,
 }: {
   text: string;
   mobileBreakAfter?: string;
   className: string;
+  expandedContent?: ReactNode;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const previewText = mobileBreakAfter ? makePreviewText(text, mobileBreakAfter) : text;
 
   if (!mobileBreakAfter) {
-    return <p className={className}>{text}</p>;
+    return (
+      <>
+        <p className={className}>{text}</p>
+        {expandedContent}
+      </>
+    );
   }
 
   return (
@@ -862,6 +873,7 @@ function MobileReadMoreText({
             </button>
           ) : null}
         </p>
+        {isOpen && expandedContent ? expandedContent : null}
         {isOpen ? (
           <button
             className="mt-2 inline border-0 bg-transparent p-0 text-[var(--gold-light)] underline decoration-[rgba(216,179,90,0.7)] decoration-1 underline-offset-4 transition hover:text-white"
@@ -979,6 +991,15 @@ function PersonIcon() {
       <path d="M18.2 28.2c1.1-2.7 3-4.1 5.8-4.1s4.7 1.4 5.8 4.1" stroke="currentColor" strokeLinecap="round" strokeWidth="2" />
       <path d="M16.2 20.2c-3.7 2.7-6.1 6.9-6.1 11.5 0 5.2 6.2 7.1 13.9 7.1s13.9-1.9 13.9-7.1c0-4.6-2.4-8.8-6.1-11.5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
       <path d="M16 34.4h16" stroke="currentColor" strokeLinecap="round" strokeWidth="2" />
+    </svg>
+  );
+}
+
+function MagnifierIcon() {
+  return (
+    <svg aria-hidden="true" className="size-9" fill="none" viewBox="0 0 48 48">
+      <circle cx="21.8" cy="21.8" r="6.6" stroke="currentColor" strokeWidth="2.2" />
+      <path d="m26.6 26.6 7.7 7.7" stroke="currentColor" strokeLinecap="round" strokeWidth="2.4" />
     </svg>
   );
 }
