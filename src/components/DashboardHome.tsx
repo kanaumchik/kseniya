@@ -8,6 +8,7 @@ import { AuthModal } from "@/components/AuthModal";
 import { BookingCalendar } from "@/components/BookingCalendar";
 import { BookingModal } from "@/components/BookingModal";
 import { ProfileMenu } from "@/components/ProfileMenu";
+import { SignOutButton } from "@/components/SignOutButton";
 import { type Slot } from "@/lib/slots";
 
 type UserOption = {
@@ -260,10 +261,6 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
           </nav>
 
           <div className="hidden shrink-0 items-center justify-end gap-2 sm:gap-3 2xl:flex">
-            <button className="nav-link insight-nav-link hidden text-sm lg:inline-flex" type="button" onClick={scrollToInsight}>
-              <span aria-hidden="true">✦</span>
-              <span>Получить подсказку</span>
-            </button>
             {role ? <ProfileMenu name={name} role={role} /> : <AuthModal />}
           </div>
 
@@ -328,15 +325,16 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
                         Мои клиенты
                       </Link>
                     </>
-                  ) : (
-                    <Link className="rounded-md border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-sm font-medium text-white/86 transition hover:border-[var(--gold)] hover:text-[var(--gold-light)]" href="/bookings" onClick={() => setIsMobileMenuOpen(false)}>
-                      Мои записи
-                    </Link>
-                  )}
-                </>
-              ) : (
-                <AuthModal triggerClassName="w-full" triggerLabel="Войти" />
-              )}
+                ) : (
+                  <Link className="rounded-md border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-sm font-medium text-white/86 transition hover:border-[var(--gold)] hover:text-[var(--gold-light)]" href="/bookings" onClick={() => setIsMobileMenuOpen(false)}>
+                    Мои записи
+                  </Link>
+                )}
+                <SignOutButton className="rounded-md border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-left text-sm font-medium text-white/86 transition hover:border-[var(--gold)] hover:text-[var(--gold-light)]" />
+              </>
+            ) : (
+              <AuthModal triggerClassName="w-full" triggerLabel="Войти" />
+            )}
 
             </div>
           </div>
