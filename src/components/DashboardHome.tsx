@@ -46,21 +46,21 @@ const supportPackages = [
   {
     title: "Запуск трансформации",
     text: "Стартовый пакет сессий для тех, кто хочет не ограничиваться одной сессией, а пройти первые этапы глубокой работы с поддержкой и запустить трансформацию, чтобы дальше пройти самостоятельно. Подходит, если у вас есть конкретный запрос, но вы пока не готовы заходить в длительное сопровождение.",
-    mobileBreakAfter: "чтобы дальше пройти самостоятельно",
+    mobileBreakAfter: "в длительное сопровождение",
     details: ["2 расстановочные сессии по 90 минут", "1 поддерживающая сессия на 60 минут", "всего 4 часа индивидуальной работы"],
     meta: ["Срок: 3-4 недели", "Объём: 3 сессии", "Стоимость: 10 000 рублей"],
   },
   {
     title: "Глубина и поддержка",
-    text: "Формат для тех, кто готов идти в трансформацию глубже и с поддержкой. Подходит для объёмных запросов, связанных с отношениями, деньгами, самореализацией, повторяющимися сценариями или внутренними ограничениями. Здесь больше времени на проживание, внимания к нюансам запроса и больше поддержки для осознания и преодоления сопротивления, чтобы новый опыт постепенно становилися частью жизни.",
-    mobileBreakAfter: "повторяющимися сценариями или внутренними ограничениями",
+    text: "Формат для тех, кто готов идти в трансформацию глубже и с поддержкой. Подходит для объёмных запросов, связанных с отношениями, деньгами, самореализацией, повторяющимися сценариями или внутренними ограничениями. Здесь больше времени на проживание, внимания к нюансам запроса и больше поддержки для осознания и преодоления сопротивления, чтобы новый опыт постепенно становился частью жизни.",
+    mobileBreakAfter: "постепенно становился частью жизни",
     details: ["4 расстановочные сессии по 90 минут", "2 поддерживающие сессии по 60 минут", "всего 8 часов индивидуальной работы"],
     meta: ["Срок: 6-8 недель", "Объём: 6 сессий", "Стоимость: 20 000 рублей"],
   },
   {
     title: "От хаоса к гармонии и порядку",
     text: "Сопровождение для периода кризиса, сильных перемен или внутренней пересборки. Подходит при разводе, разрыве отношений, увольнении, потере опоры или состоянии, когда старое уже не работает, а новое ещё не создано. В программе мы чередуем глубокие расстановочные сессии и поддерживающие встречи, чтобы пройти острый период, вернуть опору, собрать ясность и постепенно перейти к новым действиям.",
-    mobileBreakAfter: "когда старое уже не работает, а новое ещё не создано",
+    mobileBreakAfter: "перейти к новым действиям",
     details: ["4 глубокие расстановочные сессии по 90 минут", "4 поддерживающие сессии по 60 минут", "всего 10 часов индивидуальной работы"],
     meta: ["Срок: 8-12 недель", "Объём: 8 сессий", "Стоимость: 24 000 рублей"],
   },
@@ -315,7 +315,7 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
           <h2 className="font-serif text-3xl text-[var(--gold-light)] sm:text-4xl">О проекте</h2>
         </div>
         <div className="project-copy">
-          <MobileReadMoreParagraphs className="" mobileBreakAfter="остаётся заблокированным" paragraphs={projectParagraphs} />
+          <MobileReadMoreParagraphs className="" mobileBreakAfter="ещё не собрано" paragraphs={projectParagraphs} />
         </div>
       </section>
 
@@ -324,7 +324,7 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
           <h2 className="font-serif text-3xl text-[var(--gold-light)] sm:text-4xl">Обо мне</h2>
         </div>
         <div className="about-copy">
-          <MobileReadMoreParagraphs className="" mobileBreakAfter="поиском своего направления" paragraphs={aboutParagraphs} />
+          <MobileReadMoreParagraphs className="" mobileBreakAfter="для больших аудиторий" paragraphs={aboutParagraphs} />
         </div>
       </section>
 
@@ -333,7 +333,7 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
           <h2 className="font-serif text-3xl text-[var(--gold-light)] sm:text-4xl">Диагностика</h2>
         </div>
         <div className="diagnostic-copy">
-          <MobileReadMoreParagraphs className="" mobileBreakAfter="конфликты и привычные способы реагирования" paragraphs={diagnosticParagraphs} />
+          <MobileReadMoreParagraphs className="" mobileBreakAfter="сомнения или ощущение тупика" paragraphs={diagnosticParagraphs} />
         </div>
         <div className="diagnostic-actions">{renderBookingCta("Записаться на диагностику", "DIAGNOSTIC")}</div>
       </section>
@@ -357,7 +357,7 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
             text="Глубокая работа с конкретным запросом: отношения, деньги, кризис, внутренний конфликт или состояние, с которым не получается справиться самостоятельно. 
 Мы смотрим, как устроена внутренняя конструкция запроса, что удерживает напряжение и где возможен новый шаг. Делаем ту работу, которая возможна на сегодняшний день в безопасном для вас режиме. 
 Подходит тем, кто пока не готов к сопровождению, но хочет глубоко разобрать одну важную тему. Продолжительность: 90 минут. Стоимость: 4000 рублей."
-            mobileBreakAfter="на сегодняшний день в безопасном для вас режиме"
+            mobileBreakAfter="где возможен новый шаг"
             cta={renderBookingCta("ЗАПИСАТЬСЯ", "SESSION")}
           />
         </div>
@@ -547,7 +547,7 @@ function PackageCard({
                 type="button"
                 onClick={() => setIsOpen(true)}
               >
-                Подробнее
+                Далее
               </button>
             ) : null}
             {isOpen ? (
@@ -638,7 +638,7 @@ function MobileReadMoreText({
             type="button"
             onClick={() => setIsOpen(true)}
           >
-            Подробнее
+            Далее
           </button>
         ) : (
           <button
@@ -696,7 +696,7 @@ function MobileReadMoreParagraphs({
                   type="button"
                   onClick={() => setIsOpen(true)}
                 >
-                  Подробнее
+                  Далее
                 </button>
               ) : null}
             </p>
