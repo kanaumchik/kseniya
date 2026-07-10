@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Marck_Script, Great_Vibes } from "next/font/google";
 import { Suspense } from "react";
+import { AnalyticsTracker } from "@/components/AnalyticsTracker";
 import { CookieBanner } from "@/components/CookieBanner";
 import { ScrollUnlockOnNavigation } from "@/components/ScrollUnlockOnNavigation";
 import "./globals.css";
@@ -32,6 +33,7 @@ export default function RootLayout({
       <body>
         <Suspense fallback={null}>
           <ScrollUnlockOnNavigation />
+          <AnalyticsTracker />
         </Suspense>
         {children}
         <CookieBanner />

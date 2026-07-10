@@ -24,6 +24,7 @@ model User {
   bookings     Booking[]
   courses      ClientCourse[]
   consentEvents ConsentEvent[]
+  analyticsEvents AnalyticsEvent[]
 }
 
 model Booking {
@@ -159,4 +160,57 @@ model ConsentEvent {
   @@index([consentType, occurredAt])
   @@index([appointmentId])
   @@map("consent_events")
+}
+
+model AnalyticsEvent {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  eventType        String   @map("event_type")
+  eventName        String   @map("event_name")
+  elementId        String?  @map("element_id")
+  elementText      String?  @map("element_text")
+  elementGroup     String?  @map("element_group")
+  pageUrl          String   @map("page_url")
+  path             String
+  referrer         String?
+  userId           Int?     @map("user_id")
+  user             User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  anonymousId      String?  @map("anonymous_id")
+  sessionId        String?  @map("session_id")
+  ipAddress        String?  @map("ip_address")
+  userAgent        String?  @map("user_agent")
+  acceptLanguage   String?  @map("accept_language")
+  timezone         String?
+  consentAnalytics Boolean  @default(false) @map("consent_analytics")
+  durationMs       Int?     @map("duration_ms")
+  eventPayload     Json     @default("{}") @map("event_payload")
+  occurredAt       DateTime @default(now()) @map("occurred_at") @db.Timestamptz(6)
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([occurredAt])
+  @@index([eventType, occurredAt])
+  @@index([eventName, occurredAt])
+  @@index([elementId, occurredAt])
+  @@index([userId, occurredAt])
+  @@index([path, occurredAt])
+  @@map("analytics_events")
+}
+
+model AnalyticsDailyAggregate {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  dateKey         String   @map("date_key")
+  eventType       String   @map("event_type")
+  eventName       String   @map("event_name")
+  elementId       String?  @map("element_id")
+  elementText     String?  @map("element_text")
+  elementGroup    String?  @map("element_group")
+  path            String
+  count           Int      @default(0)
+  totalDurationMs Int      @default(0) @map("total_duration_ms")
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([dateKey])
+  @@index([eventType, dateKey])
+  @@index([eventName, dateKey])
+  @@map("analytics_daily_aggregates")
 }

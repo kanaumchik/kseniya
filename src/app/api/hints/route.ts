@@ -1,6 +1,7 @@
 import { promises as fs } from "fs";
 import path from "path";
 import { NextResponse } from "next/server";
+import { recordAnalyticsEvent } from "@/lib/analytics";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,18 @@ export async function GET(request: Request) {
 
     const availableHints = exclude && hints.length > 1 ? hints.filter((hint) => hint !== exclude) : hints;
     const hint = availableHints[Math.floor(Math.random() * availableHints.length)];
+    const pageUrl = request.headers.get("referer") || "/";
+
+    await recordAnalyticsEvent({
+      eventName: "hint_generated",
+      eventPayload: {
+        hintsTotal: hints.length,
+      },
+      eventType: "hint_generated",
+      pageUrl,
+      path: pageUrl,
+      referrer: request.headers.get("referer"),
+    });
 
     return NextResponse.json(
       { hint },
