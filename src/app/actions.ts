@@ -10,7 +10,7 @@ import { recordConsentEvent, type ConsentType } from "@/lib/consent-audit";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import { prisma } from "@/lib/prisma";
 import { getAppHomeUrl } from "@/lib/site-url";
-import { notifyAppointmentSafely } from "@/lib/telegram";
+import { notifyAppointmentSafely } from "@/lib/notifications";
 import {
   allowedSlotDurations,
   bookingDurations,
