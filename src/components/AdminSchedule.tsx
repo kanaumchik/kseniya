@@ -107,9 +107,6 @@ export function AdminSchedule({ availableSlots, currentUser, day, dayOffs, month
 
       {notice ? <div className="rounded-md border border-[var(--danger)]/40 bg-red-950/30 px-4 py-3 text-sm text-red-200">{notice}</div> : null}
 
-      <NewSlotPanel />
-      <DayOffPanel dayOffs={dayOffs} />
-
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-[var(--line)] bg-[var(--surface)] p-3">
         <div className="flex flex-wrap gap-2">
           <ViewLink active={view === "week"} href={`/schedule?view=week&year=${year}&month=${month}&day=${day}`} label="Неделя" />
@@ -193,6 +190,9 @@ export function AdminSchedule({ availableSlots, currentUser, day, dayOffs, month
           ))}
         </div>
       </div>
+
+      <DayOffPanel dayOffs={dayOffs} />
+      <NewSlotPanel />
 
       {selectedSlot ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 px-4 backdrop-blur-sm" role="dialog" aria-modal="true">
@@ -350,7 +350,7 @@ export function AdminSchedule({ availableSlots, currentUser, day, dayOffs, month
 function NewSlotPanel() {
   return (
     <details className="rounded-md border border-[var(--line)] bg-[var(--surface)] p-4">
-      <summary className="cursor-pointer font-semibold text-white">Новый слот</summary>
+      <summary className="cursor-pointer font-semibold text-white">Открыть новый слот</summary>
       <form action={createCustomSlotAction} className="mt-4 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
         <label className="grid gap-2 text-sm font-medium text-white/86">
           Дата

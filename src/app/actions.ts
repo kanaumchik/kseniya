@@ -10,6 +10,7 @@ import { recordConsentEvent, type ConsentType } from "@/lib/consent-audit";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import { prisma } from "@/lib/prisma";
 import { getAppHomeUrl } from "@/lib/site-url";
+import { notifyAppointmentSafely } from "@/lib/telegram";
 import {
   allowedSlotDurations,
   bookingDurations,
@@ -175,6 +176,14 @@ export async function createBookingAction(formData: FormData) {
     userId,
   });
 
+  const bookingUser = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+  await notifyAppointmentSafely({
+    clientName: bookingUser?.name ?? session.user.name ?? "Клиент",
+    event: "booked",
+    startsAt,
+    type: bookingType,
+  });
+
   revalidateDashboard();
   redirect("/bookings");
 }
@@ -331,6 +340,7 @@ export async function adminCreateBookingAction(formData: FormData) {
     },
     select: {
       id: true,
+      name: true,
       timeZone: true,
     },
   });
@@ -352,6 +362,8 @@ export async function adminCreateBookingAction(formData: FormData) {
     },
   });
 
+  await notifyAppointmentSafely({ clientName: user.name, event: "booked", startsAt, type: bookingType });
+
   revalidateDashboard();
 }
 
@@ -366,6 +378,7 @@ export async function cancelBookingAction(formData: FormData) {
       ...(session.user.role === "ADMIN" ? {} : { userId }),
       status: "ACTIVE",
     },
+    include: { user: { select: { name: true } } },
   });
 
   if (!booking) {
@@ -384,6 +397,8 @@ export async function cancelBookingAction(formData: FormData) {
     },
   });
 
+  await notifyAppointmentSafely({ clientName: booking.user.name, event: "cancelled", startsAt: booking.startsAt, type: booking.type });
+
   revalidateDashboard();
 }
 
@@ -401,6 +416,7 @@ export async function rescheduleBookingAction(formData: FormData) {
       ...(session.user.role === "ADMIN" ? {} : { userId }),
       status: "ACTIVE",
     },
+    include: { user: { select: { name: true } } },
   });
 
   if (!booking) {
@@ -435,6 +451,15 @@ export async function rescheduleBookingAction(formData: FormData) {
       clientTimeZone,
       rescheduledAt: new Date(),
     },
+  });
+
+  await notifyAppointmentSafely({
+    clientName: booking.user.name,
+    event: "rescheduled",
+    newStartsAt: startsAt,
+    oldStartsAt: booking.startsAt,
+    startsAt,
+    type: booking.type,
   });
 
   revalidateDashboard();
