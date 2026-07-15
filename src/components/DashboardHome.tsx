@@ -261,6 +261,10 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
           </nav>
 
           <div className="hidden shrink-0 items-center justify-end gap-2 sm:gap-3 2xl:flex">
+            <button className="nav-link insight-nav-link hidden text-sm lg:inline-flex" type="button" onClick={scrollToInsight}>
+              <span aria-hidden="true">✦</span>
+              <span>Получить подсказку</span>
+            </button>
             {role ? <ProfileMenu name={name} role={role} /> : <AuthModal />}
           </div>
 

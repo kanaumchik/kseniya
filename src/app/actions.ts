@@ -372,7 +372,7 @@ export async function cancelBookingAction(formData: FormData) {
     throw new Error("Активная запись не найдена.");
   }
 
-  if (booking.startsAt <= new Date()) {
+  if (session.user.role !== "ADMIN" && booking.startsAt <= new Date()) {
     throw new Error("Прошедшую или уже начавшуюся диагностику нельзя отменить.");
   }
 

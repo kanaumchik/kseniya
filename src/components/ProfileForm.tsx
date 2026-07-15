@@ -2,9 +2,10 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect, useMemo, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { updateProfileAction } from "@/app/actions";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { DatePicker } from "@/components/DatePicker";
 import { supportedTimeZones } from "@/lib/time";
 
 type ProfileFormProps = {
@@ -33,11 +34,10 @@ export function ProfileForm({ user }: ProfileFormProps) {
   const [isPasswordOpen, setIsPasswordOpen] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const allowSubmitRef = useRef(false);
-  const birthDateInputRef = useRef<HTMLInputElement>(null);
   const formId = "profile-form";
   const profileTitle = [firstName, lastName].filter(Boolean).join(" ") || "Профиль";
   const currentPhoto = photoPreview ?? user.photoPath;
-  const calendarValue = useMemo(() => toDateInputValue(birthDate), [birthDate]);
+  const calendarValue = toDateInputValue(birthDate);
 
   useEffect(() => {
     if (message === "Изменения сохранены") {
@@ -113,28 +113,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
           <label className="grid gap-2 text-sm font-medium text-white/86">
             Дата рождения
             <input name="birthDate" type="hidden" value={birthDate} />
-            <div className="relative">
-              <input
-                aria-label="Дата рождения"
-                className="field w-full pr-14"
-                ref={birthDateInputRef}
-                type="date"
-                value={calendarValue}
-                onChange={(event) => setBirthDate(fromDateInputValue(event.target.value))}
-                required
-              />
-              <button
-                aria-label="Открыть календарь"
-                className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded border border-[rgba(216,179,90,0.22)] text-[var(--gold-light)] transition hover:border-[var(--gold)] hover:text-[var(--gold)] sm:right-3"
-                type="button"
-                onClick={() => {
-                  birthDateInputRef.current?.showPicker?.();
-                  birthDateInputRef.current?.focus();
-                }}
-              >
-                <CalendarIcon />
-              </button>
-            </div>
+            <DatePicker ariaLabel="Дата рождения" max={new Date().toISOString().slice(0, 10)} onChange={(date) => setBirthDate(fromDateInputValue(date))} required value={calendarValue} />
           </label>
 
           <label className="grid gap-2 text-sm font-medium text-white/86">
@@ -272,14 +251,6 @@ function fromDateInputValue(value: string) {
   const [year, month, day] = value.split("-");
 
   return `${day}.${month}.${year}`;
-}
-
-function CalendarIcon() {
-  return (
-    <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-      <path d="M7 3v3M17 3v3M4.5 9.5h15M6 5h12a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
-    </svg>
-  );
 }
 
 function formatPhoneInput(value: string) {

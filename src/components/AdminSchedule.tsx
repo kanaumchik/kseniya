@@ -9,10 +9,12 @@ import {
   createCustomSlotAction,
   createDayOffAction,
   hideSlotAction,
+  restoreSlotAction,
   updateDayOffAction,
 } from "@/app/actions";
 import { BookingCalendar } from "@/components/BookingCalendar";
 import { BookingModal } from "@/components/BookingModal";
+import { DatePicker } from "@/components/DatePicker";
 import { type Slot } from "@/lib/slots";
 import { formatDateKey, formatTimeOnly, supportedTimeZones } from "@/lib/time";
 
@@ -55,6 +57,28 @@ export function AdminSchedule({ availableSlots, currentUser, day, dayOffs, month
     return haystack.includes(clientQuery.toLowerCase());
   });
   const period = getPeriodNavigation(year, month, day, view);
+
+  async function hideSelectedSlot(formData: FormData) {
+    await hideSlotAction(formData);
+    setSelectedSlot(null);
+  }
+
+  async function restoreSelectedSlot(formData: FormData) {
+    await restoreSlotAction(formData);
+    setSelectedSlot(null);
+  }
+
+  async function cancelSelectedBooking(formData: FormData) {
+    await cancelBookingAction(formData);
+    setSelectedSlot(null);
+  }
+
+  async function createSelectedBooking(formData: FormData) {
+    await adminCreateBookingAction(formData);
+    setBookingSlot(null);
+    setSelectedSlot(null);
+    setClientQuery("");
+  }
 
   return (
     <section className="mx-auto grid w-full max-w-7xl gap-5 px-4 py-8">
@@ -168,10 +192,29 @@ export function AdminSchedule({ availableSlots, currentUser, day, dayOffs, month
               </button>
             </div>
 
-            {!selectedSlot.isBooked && !selectedSlot.isDayOff ? (
+            {selectedSlot.isBlocked && !selectedSlot.isBooked && !selectedSlot.isDayOff ? (
               <div className="mt-5 flex flex-wrap gap-3">
                 <form
-                  action={hideSlotAction}
+                  action={restoreSelectedSlot}
+                  onSubmit={(event) => {
+                    if (!window.confirm("Вы уверены, что хотите восстановить слот?")) {
+                      event.preventDefault();
+                    }
+                  }}
+                >
+                  <input name="startsAt" type="hidden" value={selectedSlot.startsAt} />
+                  <input name="endsAt" type="hidden" value={selectedSlot.endsAt} />
+                  <button className="primary-button px-4 py-2 text-sm" type="submit">
+                    Восстановить слот
+                  </button>
+                </form>
+              </div>
+            ) : null}
+
+            {!selectedSlot.isBooked && !selectedSlot.isBlocked && !selectedSlot.isDayOff ? (
+              <div className="mt-5 flex flex-wrap gap-3">
+                <form
+                  action={hideSelectedSlot}
                   onSubmit={(event) => {
                     if (!window.confirm("Вы уверены, что хотите удалить слот?")) {
                       event.preventDefault();
@@ -193,7 +236,7 @@ export function AdminSchedule({ availableSlots, currentUser, day, dayOffs, month
             {selectedSlot.isBooked && selectedSlot.bookingId ? (
               <div className="mt-5 flex flex-wrap gap-3">
                 <form
-                  action={cancelBookingAction}
+                  action={cancelSelectedBooking}
                   onSubmit={(event) => {
                     if (!window.confirm("Вы уверены, что хотите отменить запись?")) {
                       event.preventDefault();
@@ -238,7 +281,7 @@ export function AdminSchedule({ availableSlots, currentUser, day, dayOffs, month
             </div>
 
             <form
-              action={adminCreateBookingAction}
+              action={createSelectedBooking}
               className="mt-5 grid gap-4"
               onSubmit={(event) => {
                 const form = event.currentTarget;
@@ -293,7 +336,7 @@ function NewSlotPanel() {
       <form action={createCustomSlotAction} className="mt-4 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
         <label className="grid gap-2 text-sm font-medium text-white/86">
           Дата
-          <input className="field" name="dateKey" type="date" min={new Date().toISOString().slice(0, 10)} required />
+          <DatePicker min={new Date().toISOString().slice(0, 10)} name="dateKey" required />
         </label>
         <label className="grid gap-2 text-sm font-medium text-white/86">
           Время
@@ -359,7 +402,7 @@ function DayOffPanel({ dayOffs }: { dayOffs: { id: string; dateKey: string }[] }
                       }}
                     >
                       <input name="dayOffId" type="hidden" value={dayOff.id} />
-                      <input className="field min-h-10 py-2 text-sm" name="dateKey" type="date" min={new Date().toISOString().slice(0, 10)} required />
+                      <DatePicker min={new Date().toISOString().slice(0, 10)} name="dateKey" required />
                       <button className="secondary-button px-3 py-2 text-xs" type="submit">
                         Изменить
                       </button>
