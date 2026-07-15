@@ -1,20 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   adminCreateBookingAction,
   cancelBookingAction,
-  cancelDayOffAction,
   createCustomSlotAction,
-  createDayOffAction,
   hideSlotAction,
   restoreSlotAction,
-  updateDayOffAction,
+  setDayOffsAction,
 } from "@/app/actions";
 import { BookingCalendar } from "@/components/BookingCalendar";
 import { BookingModal } from "@/components/BookingModal";
 import { DatePicker } from "@/components/DatePicker";
+import { TimePicker } from "@/components/TimePicker";
 import { type Slot } from "@/lib/slots";
 import { formatDateKey, formatTimeOnly, supportedTimeZones } from "@/lib/time";
 
@@ -48,6 +47,7 @@ export function AdminSchedule({ availableSlots, currentUser, day, dayOffs, month
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
   const [bookingSlot, setBookingSlot] = useState<Slot | null>(null);
   const [clientQuery, setClientQuery] = useState("");
+  const [currentTime, setCurrentTime] = useState(() => new Date());
   const groupedSlots = useMemo(() => groupSlots(slots, selectedTimeZone), [slots, selectedTimeZone]);
   const dateKeys = Object.keys(groupedSlots).sort();
   const visibleDateKeys = view === "day" ? dateKeys.slice(0, 1) : dateKeys;
@@ -57,6 +57,12 @@ export function AdminSchedule({ availableSlots, currentUser, day, dayOffs, month
     return haystack.includes(clientQuery.toLowerCase());
   });
   const period = getPeriodNavigation(year, month, day, view);
+  const currentDateKey = formatDateKey(currentTime, selectedTimeZone);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => setCurrentTime(new Date()), 60_000);
+    return () => window.clearInterval(interval);
+  }, []);
 
   async function hideSelectedSlot(formData: FormData) {
     await hideSlotAction(formData);
@@ -85,7 +91,7 @@ export function AdminSchedule({ availableSlots, currentUser, day, dayOffs, month
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-serif text-3xl text-[var(--gold-light)]">Мое расписание</h1>
-          <p className="mt-1 text-sm text-[var(--muted)]">Неделя открывается с понедельника, текущий день выделен сильнее.</p>
+          <p className="mt-1 text-sm text-[var(--muted)]">Календарь записей</p>
         </div>
         <label className="grid gap-2 text-sm font-medium text-white/86">
           Часовой пояс
@@ -101,26 +107,26 @@ export function AdminSchedule({ availableSlots, currentUser, day, dayOffs, month
 
       {notice ? <div className="rounded-md border border-[var(--danger)]/40 bg-red-950/30 px-4 py-3 text-sm text-red-200">{notice}</div> : null}
 
+      <NewSlotPanel />
+      <DayOffPanel dayOffs={dayOffs} />
+
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-[var(--line)] bg-[var(--surface)] p-3">
         <div className="flex flex-wrap gap-2">
           <ViewLink active={view === "week"} href={`/schedule?view=week&year=${year}&month=${month}&day=${day}`} label="Неделя" />
           <ViewLink active={view === "day"} href={`/schedule?view=day&year=${year}&month=${month}&day=${day}`} label="День" />
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Link className="secondary-button px-4 py-2 text-sm" href={period.prev}>
-            Назад
+        <div className="flex flex-wrap items-center gap-2">
+          <Link aria-label="Назад" className="secondary-button flex size-11 items-center justify-center px-0 py-0 text-2xl" href={period.prev} title="Назад">
+            ‹
           </Link>
           <Link className="secondary-button px-4 py-2 text-sm" href={period.today}>
             Сегодня
           </Link>
-          <Link className="secondary-button px-4 py-2 text-sm" href={period.next}>
-            Вперёд
+          <Link aria-label="Вперёд" className="secondary-button flex size-11 items-center justify-center px-0 py-0 text-2xl" href={period.next} title="Вперёд">
+            ›
           </Link>
         </div>
       </div>
-
-      <NewSlotPanel />
-      <DayOffPanel dayOffs={dayOffs} />
 
       <div className="overflow-x-auto rounded-md border border-[var(--line)] bg-[var(--surface)]">
         <div
@@ -131,8 +137,9 @@ export function AdminSchedule({ availableSlots, currentUser, day, dayOffs, month
         >
           <div className="border-b border-r border-[var(--line)] bg-black/24 p-3 text-xs uppercase text-[var(--muted)]">Время</div>
           {visibleDateKeys.map((dateKey) => (
-            <div className={isToday(dateKey) ? "border-b border-r border-[var(--line)] bg-[rgba(232,197,122,0.1)] p-3" : "border-b border-r border-[var(--line)] p-3"} key={dateKey}>
+            <div className={dateKey === currentDateKey ? "border-b border-r border-t-2 border-[var(--line)] border-t-blue-500 bg-blue-500/[0.1] p-3" : "border-b border-r border-[var(--line)] p-3"} key={dateKey}>
               <p className="font-serif text-lg text-[var(--gold-light)]">{formatDateLabel(dateKey)}</p>
+              {dateKey === currentDateKey ? <span className="mt-1 inline-flex rounded-full bg-blue-600 px-2 py-0.5 text-[0.62rem] font-bold uppercase tracking-wide text-white">Сегодня</span> : null}
             </div>
           ))}
 
@@ -141,9 +148,20 @@ export function AdminSchedule({ availableSlots, currentUser, day, dayOffs, month
               <div className="border-r border-t border-[var(--line)] bg-black/18 p-3 text-sm text-[var(--muted)]">{timeLabel}</div>
               {visibleDateKeys.map((dateKey) => {
                 const slot = groupedSlots[dateKey]?.find((candidate) => formatTimeOnly(new Date(candidate.startsAt), selectedTimeZone) === timeLabel);
+                const slotStart = slot ? new Date(slot.startsAt) : null;
+                const slotEnd = slot ? new Date(slot.endsAt) : null;
+                const showCurrentTime = Boolean(dateKey === currentDateKey && slotStart && slotEnd && currentTime >= slotStart && currentTime < slotEnd);
+                const currentTimePosition = showCurrentTime && slotStart && slotEnd
+                  ? ((currentTime.getTime() - slotStart.getTime()) / (slotEnd.getTime() - slotStart.getTime())) * 100
+                  : 0;
 
                 return (
-                  <div className="min-h-24 border-r border-t border-[var(--line)] p-2" key={`${dateKey}-${timeLabel}`}>
+                  <div className={dateKey === currentDateKey ? "relative min-h-16 border-r border-t border-blue-500/20 bg-blue-500/[0.025] p-1.5" : "relative min-h-16 border-r border-t border-[var(--line)] p-1.5"} key={`${dateKey}-${timeLabel}`}>
+                    {showCurrentTime ? (
+                      <span className="pointer-events-none absolute inset-x-0 z-20 h-0.5 bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.7)]" style={{ top: `${currentTimePosition}%` }}>
+                        <span className="absolute -left-1.5 -top-[5px] size-3 rounded-full bg-red-500" />
+                      </span>
+                    ) : null}
                     {slot ? (
                       <div
                         className={getSlotClassName(slot)}
@@ -156,12 +174,10 @@ export function AdminSchedule({ availableSlots, currentUser, day, dayOffs, month
                           }
                         }}
                       >
-                        <span className="text-xs font-semibold">{formatTimeRangeText(slot, selectedTimeZone)}</span>
-                        <span className="mt-1 block text-left text-sm">{getSlotTitle(slot)}</span>
-                        {slot.packageTitle ? <span className="mt-1 block text-left text-[0.68rem] text-[var(--gold-light)]">{slot.packageTitle}</span> : null}
+                        <span className="block text-left text-sm font-semibold">{getSlotTitle(slot)}</span>
                         {slot.bookedUserId ? (
                           <Link
-                            className="mt-1 block text-left text-xs text-[var(--gold-light)] hover:text-[var(--gold)]"
+                            className="mt-0.5 block text-left text-xs text-[var(--gold-light)] hover:text-[var(--gold)]"
                             href={`/clients/${slot.bookedUserId}`}
                             onClick={(event) => event.stopPropagation()}
                           >
@@ -192,7 +208,7 @@ export function AdminSchedule({ availableSlots, currentUser, day, dayOffs, month
               </button>
             </div>
 
-            {selectedSlot.isBlocked && !selectedSlot.isBooked && !selectedSlot.isDayOff ? (
+            {selectedSlot.isBlocked && !selectedSlot.isBooked && !selectedSlot.isDayOff && new Date(selectedSlot.endsAt) > new Date() ? (
               <div className="mt-5 flex flex-wrap gap-3">
                 <form
                   action={restoreSelectedSlot}
@@ -211,7 +227,7 @@ export function AdminSchedule({ availableSlots, currentUser, day, dayOffs, month
               </div>
             ) : null}
 
-            {!selectedSlot.isBooked && !selectedSlot.isBlocked && !selectedSlot.isDayOff ? (
+            {!selectedSlot.isBooked && !selectedSlot.isBlocked && !selectedSlot.isDayOff && new Date(selectedSlot.endsAt) > new Date() ? (
               <div className="mt-5 flex flex-wrap gap-3">
                 <form
                   action={hideSelectedSlot}
@@ -227,9 +243,11 @@ export function AdminSchedule({ availableSlots, currentUser, day, dayOffs, month
                     Удалить слот
                   </button>
                 </form>
-                <button className="primary-button px-4 py-2 text-sm" type="button" onClick={() => setBookingSlot(selectedSlot)}>
-                  Записать клиента
-                </button>
+                {new Date(selectedSlot.startsAt) > new Date() ? (
+                  <button className="primary-button px-4 py-2 text-sm" type="button" onClick={() => setBookingSlot(selectedSlot)}>
+                    Записать клиента
+                  </button>
+                ) : null}
               </div>
             ) : null}
 
@@ -340,7 +358,7 @@ function NewSlotPanel() {
         </label>
         <label className="grid gap-2 text-sm font-medium text-white/86">
           Время
-          <input className="field" name="time" type="time" required />
+          <TimePicker name="time" required />
         </label>
         <button className="primary-button self-end px-5 py-3 text-sm" type="submit">
           Создать
@@ -351,86 +369,111 @@ function NewSlotPanel() {
 }
 
 function DayOffPanel({ dayOffs }: { dayOffs: { id: string; dateKey: string }[] }) {
-  const now = new Date();
-  const dateKeys = Array.from({ length: 42 }, (_, index) => {
-    const date = new Date(now.getTime() + index * 24 * 60 * 60 * 1000);
-    return formatDateKey(date, "Asia/Yekaterinburg");
-  });
+  const today = formatDateKey(new Date(), "Asia/Yekaterinburg");
+  const [visibleMonth, setVisibleMonth] = useState(today.slice(0, 7));
+  const [selectedDateKeys, setSelectedDateKeys] = useState(() => new Set(dayOffs.map((dayOff) => dayOff.dateKey)));
+  const [year, month] = visibleMonth.split("-").map(Number);
+  const calendarDays = useMemo(() => getDayOffCalendarDays(year, month), [month, year]);
+  const monthDateKeys = useMemo(() => getMonthDateKeys(year, month), [month, year]);
+  const availableYears = Array.from({ length: 11 }, (_, index) => Number(today.slice(0, 4)) + index);
+  const firstAvailableMonth = today.slice(0, 7);
+  const lastAvailableMonth = `${availableYears[availableYears.length - 1]}-12`;
+
+  function changeMonth(delta: number) {
+    const date = new Date(Date.UTC(year, month - 1 + delta, 1));
+    setVisibleMonth(date.toISOString().slice(0, 7));
+  }
+
+  function toggleDay(dateKey: string) {
+    if (dateKey < today) return;
+    setSelectedDateKeys((current) => {
+      const next = new Set(current);
+      if (next.has(dateKey)) next.delete(dateKey);
+      else next.add(dateKey);
+      return next;
+    });
+  }
 
   return (
     <details className="rounded-md border border-[var(--line)] bg-[var(--surface)] p-4">
       <summary className="cursor-pointer font-semibold text-white">Day off</summary>
-      <div className="mt-4 grid gap-5 lg:grid-cols-2">
-        <form
-          action={createDayOffAction}
-          className="grid gap-3"
-          onSubmit={(event) => {
-            if (!window.confirm("Вы уверены, что хотите назначить day off?")) {
-              event.preventDefault();
-            }
-          }}
-        >
-          <h2 className="text-sm font-semibold text-white">Выберите дни</h2>
-          <div className="grid grid-cols-7 gap-1 rounded-md border border-[var(--line)] bg-black/20 p-2">
-            {dateKeys.map((dateKey) => (
-              <label className="grid cursor-pointer gap-1 rounded border border-white/[0.06] px-2 py-2 text-center text-xs text-white/76 transition hover:border-[var(--gold)]" key={dateKey}>
-                <input className="mx-auto accent-[var(--gold)]" name="dateKeys" type="checkbox" value={dateKey} />
-                <span>{formatDayNumber(dateKey)}</span>
-              </label>
-            ))}
-          </div>
-          <button className="primary-button w-fit px-4 py-2 text-sm" type="submit">
-            Подтвердить
-          </button>
-        </form>
+      <form
+        action={setDayOffsAction}
+        className="mx-auto mt-4 grid max-w-xl gap-4"
+        onSubmit={(event) => {
+          if (!window.confirm("Сохранить рабочие и выходные дни выбранного месяца?")) event.preventDefault();
+        }}
+      >
+        {monthDateKeys.map((dateKey) => <input key={dateKey} name="monthDateKeys" type="hidden" value={dateKey} />)}
+        {monthDateKeys.filter((dateKey) => selectedDateKeys.has(dateKey)).map((dateKey) => <input key={dateKey} name="dateKeys" type="hidden" value={dateKey} />)}
 
-        <div>
-          <h2 className="text-sm font-semibold text-white">Запланированные</h2>
-          <div className="mt-3 grid gap-2">
-            {dayOffs.length > 0 ? (
-              dayOffs.map((dayOff) => (
-                <div className="grid gap-2 rounded-md border border-[var(--line)] px-3 py-2" key={dayOff.id}>
-                  <span className="text-sm text-white/76">{formatDateLabel(dayOff.dateKey)}</span>
-                  <div className="flex flex-wrap gap-2">
-                    <form
-                      action={updateDayOffAction}
-                      className="flex flex-wrap gap-2"
-                      onSubmit={(event) => {
-                        if (!window.confirm("Вы уверены, что хотите изменить day off?")) {
-                          event.preventDefault();
-                        }
-                      }}
-                    >
-                      <input name="dayOffId" type="hidden" value={dayOff.id} />
-                      <DatePicker min={new Date().toISOString().slice(0, 10)} name="dateKey" required />
-                      <button className="secondary-button px-3 py-2 text-xs" type="submit">
-                        Изменить
-                      </button>
-                    </form>
-                    <form
-                      action={cancelDayOffAction}
-                      onSubmit={(event) => {
-                        if (!window.confirm("Вы уверены, что хотите удалить day off?")) {
-                          event.preventDefault();
-                        }
-                      }}
-                    >
-                      <input name="dateKey" type="hidden" value={dayOff.dateKey} />
-                      <button className="secondary-button px-3 py-2 text-xs" type="submit">
-                        Отменить
-                      </button>
-                    </form>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-[var(--muted)]">Запланированных day off пока нет.</p>
-            )}
+        <div className="rounded-3xl border border-slate-200 bg-white p-4 text-slate-950 shadow-xl sm:p-5">
+          <div className="grid grid-cols-[3rem_1fr_3rem] items-center gap-3">
+            <button aria-label="Предыдущий месяц" className="flex size-12 items-center justify-center rounded-2xl border border-slate-200 text-2xl text-slate-700 transition hover:border-blue-500 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-30" disabled={visibleMonth <= firstAvailableMonth} onClick={() => changeMonth(-1)} type="button">‹</button>
+            <div className="flex min-w-0 items-center justify-center gap-2">
+              <select aria-label="Месяц" className="min-w-0 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-base font-bold outline-none focus:border-blue-500" value={month} onChange={(event) => setVisibleMonth(`${year}-${String(event.target.value).padStart(2, "0")}`)}>
+                {dayOffMonthNames.map((name, index) => <option key={name} value={index + 1}>{name}</option>)}
+              </select>
+              <select aria-label="Год" className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-base font-semibold outline-none focus:border-blue-500" value={year} onChange={(event) => setVisibleMonth(`${event.target.value}-${String(month).padStart(2, "0")}`)}>
+                {availableYears.map((availableYear) => <option key={availableYear} value={availableYear}>{availableYear}</option>)}
+              </select>
+            </div>
+            <button aria-label="Следующий месяц" className="flex size-12 items-center justify-center rounded-2xl border border-slate-200 text-2xl text-slate-700 transition hover:border-blue-500 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-30" disabled={visibleMonth >= lastAvailableMonth} onClick={() => changeMonth(1)} type="button">›</button>
+          </div>
+
+          <div className="mt-4 grid grid-cols-7 gap-1 text-center">
+            {dayOffWeekDays.map((weekDay) => <span className="py-2 text-sm font-semibold text-slate-400" key={weekDay}>{weekDay}</span>)}
+            {calendarDays.map((day) => {
+              const isDayOff = selectedDateKeys.has(day.dateKey);
+              const isPast = day.dateKey < today;
+              return (
+                <button
+                  aria-label={`${formatDateLabel(day.dateKey)}: ${isDayOff ? "day off" : "рабочий день"}`}
+                  className={[
+                    "mx-auto flex size-10 items-center justify-center rounded-xl text-sm font-bold transition sm:size-12",
+                    day.currentMonth ? "" : "opacity-25",
+                    isDayOff ? "bg-slate-400 text-white hover:bg-slate-500" : "bg-blue-600 text-white shadow-sm shadow-blue-200 hover:bg-blue-700",
+                    isPast ? "cursor-not-allowed opacity-35" : "",
+                  ].join(" ")}
+                  disabled={!day.currentMonth || isPast}
+                  key={day.dateKey}
+                  onClick={() => toggleDay(day.dateKey)}
+                  type="button"
+                >
+                  {day.day}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-4 text-xs font-semibold text-slate-600">
+            <span className="flex items-center gap-2"><span className="size-3 rounded bg-blue-600" />Рабочий день</span>
+            <span className="flex items-center gap-2"><span className="size-3 rounded bg-slate-400" />Day off</span>
           </div>
         </div>
-      </div>
+
+        <button className="primary-button w-full px-5 py-3 text-sm sm:w-fit" type="submit">Подтвердить</button>
+      </form>
     </details>
   );
+}
+
+const dayOffMonthNames = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
+const dayOffWeekDays = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
+
+function getMonthDateKeys(year: number, month: number) {
+  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  return Array.from({ length: daysInMonth }, (_, index) => `${year}-${String(month).padStart(2, "0")}-${String(index + 1).padStart(2, "0")}`);
+}
+
+function getDayOffCalendarDays(year: number, month: number) {
+  const first = new Date(Date.UTC(year, month - 1, 1));
+  const offset = (first.getUTCDay() + 6) % 7;
+  const start = new Date(Date.UTC(year, month - 1, 1 - offset));
+  return Array.from({ length: 42 }, (_, index) => {
+    const date = new Date(start.getTime() + index * 86400000);
+    return { currentMonth: date.getUTCMonth() === month - 1, dateKey: date.toISOString().slice(0, 10), day: date.getUTCDate() };
+  });
 }
 
 function ViewLink({ active, href, label }: { active: boolean; href: string; label: string }) {
@@ -451,7 +494,7 @@ function groupSlots(slots: Slot[], timeZone: string) {
 }
 
 function getSlotClassName(slot: Slot) {
-  const base = "block h-full w-full rounded-md border px-3 py-2 text-left transition hover:border-[var(--gold)]";
+  const base = "block h-full min-h-12 w-full rounded-md border px-2.5 py-2 text-left transition hover:border-[var(--gold)]";
 
   if (slot.isDayOff) {
     return `${base} border-white/[0.08] bg-zinc-900/70 text-zinc-400`;
@@ -478,7 +521,7 @@ function getSlotTitle(slot: Slot) {
   }
 
   if (slot.isBooked) {
-    return slot.bookingType === "SESSION" ? "Сессия" : slot.diagnosticNumber ? `Диагностика Д${slot.diagnosticNumber}` : "Диагностика";
+    return slot.bookingType === "SESSION" ? "Сессия" : "Диагностика";
   }
 
   return "Свободно";
@@ -501,15 +544,6 @@ function formatDateLabel(dateKey: string) {
     month: "long",
     timeZone: "UTC",
   }).format(new Date(Date.UTC(year, month - 1, day)));
-}
-
-function formatDayNumber(dateKey: string) {
-  const [, , day] = dateKey.split("-");
-  return day;
-}
-
-function isToday(dateKey: string) {
-  return dateKey === formatDateKey(new Date(), "Asia/Yekaterinburg");
 }
 
 function getPeriodNavigation(year: number, month: number, day: number, view: "week" | "day") {

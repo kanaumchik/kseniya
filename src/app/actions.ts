@@ -539,8 +539,12 @@ export async function updateProfileAction(_previousState: string | undefined, fo
 export async function hideSlotAction(formData: FormData) {
   const session = await requireSession();
   assertAdmin(session.user.role);
-  const { startsAt } = parseSlotDates(formData);
+  const { startsAt, endsAt } = parseSlotDates(formData);
   const dateKey = formatDateKey(startsAt, psychologistTimeZone);
+
+  if (endsAt <= new Date()) {
+    throw new Error("Прошедший слот нельзя удалить.");
+  }
 
   await prisma.hiddenSlot.upsert({
     where: { startsAt },
@@ -624,6 +628,39 @@ export async function createDayOffAction(formData: FormData) {
       }),
     ),
   );
+
+  revalidateDashboard();
+  revalidatePath("/dashboard/schedule");
+  revalidatePath("/schedule");
+}
+
+export async function setDayOffsAction(formData: FormData) {
+  const session = await requireSession();
+  assertAdmin(session.user.role);
+  const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+  const monthDateKeys = [...new Set(formData.getAll("monthDateKeys").map(String).filter((dateKey) => datePattern.test(dateKey)))];
+  const dateKeys = [...new Set(formData.getAll("dateKeys").map(String).filter((dateKey) => datePattern.test(dateKey)))];
+
+  if (monthDateKeys.length < 28 || monthDateKeys.length > 31 || dateKeys.some((dateKey) => !monthDateKeys.includes(dateKey))) {
+    throw new Error("Некорректный набор дат day off.");
+  }
+
+  const monthPrefix = monthDateKeys[0]?.slice(0, 7);
+
+  if (!monthPrefix || monthDateKeys.some((dateKey) => !dateKey.startsWith(`${monthPrefix}-`))) {
+    throw new Error("Даты day off должны относиться к одному месяцу.");
+  }
+
+  const conflictDateKeys = await getDayOffConflictDateKeys(dateKeys);
+
+  if (conflictDateKeys.length > 0) {
+    redirect(`/schedule?notice=${encodeURIComponent(`Day off не изменены: на ${conflictDateKeys.join(", ")} уже есть запись.`)}`);
+  }
+
+  await prisma.$transaction([
+    prisma.dayOff.deleteMany({ where: { dateKey: { in: monthDateKeys, notIn: dateKeys } } }),
+    ...dateKeys.map((dateKey) => prisma.dayOff.upsert({ where: { dateKey }, update: {}, create: { dateKey } })),
+  ]);
 
   revalidateDashboard();
   revalidatePath("/dashboard/schedule");

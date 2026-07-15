@@ -59,7 +59,7 @@ export default async function SchedulePage({ searchParams }: SchedulePageProps) 
       select: { name: true, email: true },
     }),
   ]);
-  const availableSlots = slots.filter((slot) => !slot.isBooked && !slot.isBlocked && !slot.isDayOff);
+  const availableSlots = slots.filter((slot) => new Date(slot.startsAt) > now && !slot.isBooked && !slot.isBlocked && !slot.isDayOff);
 
   return (
     <main className="min-h-screen bg-[var(--background)] text-white">

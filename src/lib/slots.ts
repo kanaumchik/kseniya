@@ -14,7 +14,7 @@ export const adminSlotDurationMinutes = 60;
 export const clientSlotStepMinutes = 60;
 export const diagnosticDurationMinutes = 60;
 export const sessionDurationMinutes = 90;
-export const userBookingWindowDays = 14;
+export const userBookingWindowDays = 21;
 export const allowedSlotDurations = [60, 90, 120, 180] as const;
 export const bookingDurations = {
   DIAGNOSTIC: diagnosticDurationMinutes,
