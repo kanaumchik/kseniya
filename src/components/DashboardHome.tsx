@@ -465,7 +465,7 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
             <HourglassIcon className="h-10 w-10 text-[var(--gold-light)]" />
           </div>
           <p className="text-base leading-7 text-white/82">
-            Программы находятся в разработке, но вы уже сейчас можете записаться на диагностику
+            Авторские программы готовятся к запуску. Пока вы можете записаться на диагностику и подобрать подходящий формат работы
           </p>
           <div className="flex justify-center">{renderBookingCta("Записаться на диагностику", "DIAGNOSTIC")}</div>
         </div>
@@ -510,6 +510,9 @@ export function DashboardHome({ id, name, email, role, timeZone, slots, users }:
               <p>
                 ИНН <span className="font-semibold text-white/82">860105706756</span>, ОГРНИП{" "}
                 <span className="font-semibold text-white/82">325723200087383</span>
+              </p>
+              <p>
+                Адрес для корреспонденции: <span className="font-semibold text-white/82">625022 г. Тюмень, ул. Газовиков, д. 67, кв. 53</span>
               </p>
               <p className="mt-4">
                 E-mail:{" "}
