@@ -70,6 +70,11 @@ export const legalDocuments: LegalDocumentMeta[] = [
     title: "Согласие на публикацию отзыва",
     filePath: path.join("Правовые документы", "11_Согласие_на_публикацию_отзыва.txt"),
   },
+  {
+    slug: "services",
+    title: "Услуги",
+    filePath: path.join("Правовые документы", "12_Услуги.txt"),
+  },
 ];
 
 export function getLegalDocument(slug: string) {

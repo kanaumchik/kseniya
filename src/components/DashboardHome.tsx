@@ -41,6 +41,7 @@ const footerLegalLinks = [
   { href: "/legal/privacy-policy", label: "Политика обработки персональных данных" },
   { href: "/legal/offer", label: "Публичная оферта" },
   { href: "/legal/cookie-policy", label: "Политика cookie" },
+  { href: "/legal/services", label: "Услуги" },
   { href: "/legal/contacts", label: "Контакты и реквизиты" },
 ];
 

@@ -48,47 +48,96 @@ export function LegalDocumentView({ document }: LegalDocumentViewProps) {
             <h1 className="mt-4 max-w-4xl font-serif text-3xl leading-tight text-[#16130f] sm:text-4xl lg:text-5xl">{document.title}</h1>
           </div>
 
-          <div className="grid gap-4 text-base leading-8 text-[#2d261d]">{renderDocument(document.body)}</div>
+          <div className="grid gap-4 text-base leading-8 text-[#2d261d]">{renderDocument(document.body, document.revision)}</div>
         </article>
       </div>
     </main>
   );
 }
 
-function renderDocument(body: string) {
-  return body
+function renderDocument(body: string, revision: string | null) {
+  const lines = body
     .split(/\r?\n/)
     .map((line) => line.trim())
-    .filter((line, index) => {
-      if (!line) {
-        return false;
+    .filter(Boolean)
+    .filter((line, index) => index !== 0 && line !== revision);
+  const content: ReactNode[] = [];
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+
+    if (isTableRow(line) && isTableSeparator(lines[index + 1])) {
+      const headers = splitTableRow(line);
+      const rows: string[][] = [];
+      index += 2;
+
+      while (index < lines.length && isTableRow(lines[index])) {
+        rows.push(splitTableRow(lines[index]));
+        index += 1;
       }
 
-      return !(index === 0 && line.startsWith("# "));
-    })
-    .map((line, index) => {
-      if (line.startsWith("## ")) {
-        return (
-          <h2 className="mt-7 font-serif text-2xl leading-snug text-[#18130e]" key={`${line}-${index}`}>
-            {renderInline(line.replace(/^##\s+/, ""))}
-          </h2>
-        );
-      }
+      index -= 1;
+      content.push(
+        <div className="my-3 overflow-x-auto rounded-md border border-[#dfd4c2]" key={`table-${index}`}>
+          <table className="min-w-[48rem] border-collapse text-left text-sm leading-6">
+            <thead className="bg-[#f0e4cd] text-[#3f2d12]">
+              <tr>
+                {headers.map((header, headerIndex) => (
+                  <th className="border-b border-r border-[#d8c8ad] px-4 py-3 font-semibold last:border-r-0" key={`${header}-${headerIndex}`} scope="col">
+                    {renderInline(header)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, rowIndex) => (
+                <tr className="border-b border-[#e7ded0] align-top last:border-b-0" key={`row-${rowIndex}`}>
+                  {headers.map((_, cellIndex) => (
+                    <td className="border-r border-[#e7ded0] px-4 py-3 last:border-r-0" key={`cell-${cellIndex}`}>
+                      {renderInline(row[cellIndex] ?? "")}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>,
+      );
+      continue;
+    }
 
-      if (line.startsWith("# ")) {
-        return (
-          <h2 className="mt-7 font-serif text-2xl leading-snug text-[#18130e]" key={`${line}-${index}`}>
-            {renderInline(line.replace(/^#\s+/, ""))}
-          </h2>
-        );
-      }
+    if (line.startsWith("## ") || line.startsWith("# ")) {
+      content.push(
+        <h2 className="mt-7 font-serif text-2xl leading-snug text-[#18130e]" key={`${line}-${index}`}>
+          {renderInline(line.replace(/^#{1,2}\s+/, ""))}
+        </h2>,
+      );
+      continue;
+    }
 
-      return (
+    content.push(
         <p className="max-w-4xl" key={`${line}-${index}`}>
           {renderInline(line)}
-        </p>
-      );
-    });
+        </p>,
+    );
+  }
+
+  return content;
+}
+
+function isTableRow(line: string | undefined) {
+  return Boolean(line?.startsWith("|") && line.endsWith("|"));
+}
+
+function isTableSeparator(line: string | undefined) {
+  return Boolean(line && isTableRow(line) && splitTableRow(line).every((cell) => /^:?-{3,}:?$/.test(cell)));
+}
+
+function splitTableRow(line: string) {
+  return line
+    .slice(1, -1)
+    .split("|")
+    .map((cell) => cell.trim());
 }
 
 function renderInline(text: string): ReactNode[] {
