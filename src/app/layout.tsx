@@ -19,7 +19,7 @@ const greatVibes = Great_Vibes({
 });
 
 export const metadata: Metadata = {
-  title: "Ксения Наумчик | Автор",
+  title: "Ксения Наумчик | Психолог",
   description: "Автор трансформационных программ",
 };
 
