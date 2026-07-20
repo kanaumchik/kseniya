@@ -6,7 +6,7 @@ import { createBookingAction } from "@/app/actions";
 
 type PaymentMethod = "card" | "sbp";
 
-export function PaymentCheckout({ amountLabel, bookingLabel, packageTitle, paymentNotice = false, serviceTitle, startsAt, timeZone }: { amountLabel: string; bookingLabel: string; packageTitle?: string; paymentNotice?: boolean; serviceTitle: string; startsAt: string; timeZone: string }) {
+export function PaymentCheckout({ amountLabel, bookingLabel, endsAt, packageTitle, paymentNotice = false, serviceTitle, startsAt, timeZone }: { amountLabel: string; bookingLabel: string; endsAt: string; packageTitle?: string; paymentNotice?: boolean; serviceTitle: string; startsAt: string; timeZone: string }) {
   const [method, setMethod] = useState<PaymentMethod>("card");
   const [showNotice] = useState(paymentNotice);
   const [showLeaveConfirmation, setShowLeaveConfirmation] = useState(false);
@@ -32,6 +32,7 @@ export function PaymentCheckout({ amountLabel, bookingLabel, packageTitle, payme
             <button className="secondary-button inline-flex min-h-12 items-center justify-center px-5" onClick={() => setShowLeaveConfirmation(true)} type="button">Вернуться в мои записи</button>
             <form action={createBookingAction} className="sm:max-w-sm">
               <input name="startsAt" type="hidden" value={startsAt} />
+              <input name="endsAt" type="hidden" value={endsAt} />
               <input name="timeZone" type="hidden" value={timeZone} />
               <input name="type" type="hidden" value="SESSION" />
               <input name="paymentFinalization" type="hidden" value="accepted" />

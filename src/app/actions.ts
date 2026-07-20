@@ -159,6 +159,7 @@ export async function prepareBookingPaymentAction(formData: FormData) {
   const clientTimeZone = await getClientTimeZone(userId, formData.get("timeZone"), session.user.timeZone);
   const paymentParams = new URLSearchParams({
     startsAt: selectedSlot.startsAt.toISOString(),
+    endsAt: endsAt.toISOString(),
     timeZone: clientTimeZone,
   });
 
@@ -225,6 +226,7 @@ export async function createBookingAction(formData: FormData) {
   if (paymentFinalization) {
     const paymentParams = new URLSearchParams({
       startsAt: startsAt.toISOString(),
+      endsAt: endsAt.toISOString(),
       timeZone: clientTimeZone,
       paymentNotice: "shown",
     });

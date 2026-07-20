@@ -11,14 +11,15 @@ const packagePrices: Record<string, number> = {
   "От хаоса к гармонии и порядку": 24000,
 };
 
-export default async function PaymentPage({ searchParams }: { searchParams: Promise<{ startsAt?: string; timeZone?: string; packageTitle?: string; paymentNotice?: string }> }) {
+export default async function PaymentPage({ searchParams }: { searchParams: Promise<{ startsAt?: string; endsAt?: string; timeZone?: string; packageTitle?: string; paymentNotice?: string }> }) {
   const session = await auth();
   if (!session?.user) redirect("/");
   if (session.user.role === "ADMIN") redirect("/history");
 
-  const { startsAt, timeZone, packageTitle, paymentNotice } = await searchParams;
+  const { startsAt, endsAt, timeZone, packageTitle, paymentNotice } = await searchParams;
   const startsAtDate = new Date(startsAt ?? "");
-  if (!startsAt || !timeZone || Number.isNaN(startsAtDate.getTime())) notFound();
+  const endsAtDate = new Date(endsAt ?? "");
+  if (!startsAt || !endsAt || !timeZone || Number.isNaN(startsAtDate.getTime()) || Number.isNaN(endsAtDate.getTime())) notFound();
 
   const normalizedPackageTitle = packageTitle && packagePrices[packageTitle] ? packageTitle : undefined;
   const serviceTitle = normalizedPackageTitle ?? "Индивидуальная психологическая сессия";
@@ -43,7 +44,7 @@ export default async function PaymentPage({ searchParams }: { searchParams: Prom
         </div>
       </header>
       <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:py-12">
-        <PaymentCheckout amountLabel={amountLabel} bookingLabel={bookingLabel} packageTitle={normalizedPackageTitle} paymentNotice={paymentNotice === "shown"} serviceTitle={serviceTitle} startsAt={startsAtDate.toISOString()} timeZone={timeZone} />
+        <PaymentCheckout amountLabel={amountLabel} bookingLabel={bookingLabel} endsAt={endsAtDate.toISOString()} packageTitle={normalizedPackageTitle} paymentNotice={paymentNotice === "shown"} serviceTitle={serviceTitle} startsAt={startsAtDate.toISOString()} timeZone={timeZone} />
       </div>
     </main>
   );
