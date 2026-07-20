@@ -185,7 +185,7 @@ export async function createBookingAction(formData: FormData) {
   });
 
   revalidateDashboard();
-  redirect("/bookings");
+  redirect(bookingType === "SESSION" ? `/payment?bookingId=${booking.id}` : "/bookings");
 }
 
 async function recordRegistrationConsents({
@@ -294,7 +294,7 @@ async function recordBookingConsents({
       action: "checkbox_acceptance",
       appointmentId,
       bookingKind,
-      buttonLabel: "Подтвердить запись",
+      buttonLabel: bookingKind === "session" ? "Перейти к оплате" : "Подтвердить запись",
       checkboxLabel: consent.checkboxLabel,
       consentType: consent.consentType,
       documentCode: consent.documentCode,

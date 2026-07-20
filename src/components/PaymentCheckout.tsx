@@ -1,0 +1,73 @@
+"use client";
+
+import Link from "next/link";
+import { useState } from "react";
+
+type PaymentMethod = "card" | "sbp";
+
+export function PaymentCheckout({ amountLabel, bookingLabel, serviceTitle }: { amountLabel: string; bookingLabel: string; serviceTitle: string }) {
+  const [method, setMethod] = useState<PaymentMethod>("card");
+  const [showNotice, setShowNotice] = useState(false);
+
+  return (
+    <>
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <section className="gold-card p-5 sm:p-7">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--gold)]">Шаг 1 из 2</p>
+          <h1 className="mt-3 font-serif text-3xl text-[var(--gold-light)] sm:text-4xl">Выберите способ оплаты</h1>
+          <p className="mt-2 text-sm text-[var(--muted)]">Оплата выбранной психологической услуги</p>
+
+          <div className="mt-7 grid gap-3">
+            <PaymentOption active={method === "card"} description="Картой любого российского банка" label="Банковская карта" onClick={() => setMethod("card")}>
+              <CardIcon />
+            </PaymentOption>
+            <PaymentOption active={method === "sbp"} description="Через приложение банка по СБП" label="Система быстрых платежей" onClick={() => setMethod("sbp")}>
+              <SbpIcon />
+            </PaymentOption>
+          </div>
+
+          <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <Link className="secondary-button inline-flex min-h-12 items-center justify-center px-5" href="/bookings">Вернуться в мои записи</Link>
+            <button className="primary-button min-h-12 px-8" onClick={() => setShowNotice(true)} type="button">Оплатить {amountLabel}</button>
+          </div>
+        </section>
+
+        <aside className="gold-card h-fit p-5 sm:p-6">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--gold)]">Ваша запись</p>
+          <h2 className="mt-3 text-xl font-semibold text-white">{serviceTitle}</h2>
+          <p className="mt-3 text-sm leading-6 text-[var(--muted)]">{bookingLabel}</p>
+          <div className="mt-5 border-t border-[var(--line)] pt-5">
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-sm text-[var(--muted)]">К оплате</span>
+              <strong className="text-xl text-[var(--gold-light)]">{amountLabel}</strong>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      {showNotice ? (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm" role="dialog" aria-modal="true">
+          <div className="w-full max-w-lg rounded-md border border-[rgba(232,197,122,0.24)] bg-[#10100f] p-6 text-center shadow-2xl shadow-black sm:p-8">
+            <div className="mx-auto flex size-12 items-center justify-center rounded-full border border-[var(--line)] text-2xl text-[var(--gold-light)]">i</div>
+            <h2 className="mt-5 font-serif text-2xl leading-tight text-[var(--gold-light)]">Функционал оплаты на сайте в разработке</h2>
+            <p className="mt-3 text-sm leading-6 text-[var(--muted)]">Ваша запись уже сохранена. Перейдите в раздел «Мои записи».</p>
+            <Link className="primary-button mt-6 inline-flex min-h-12 w-full items-center justify-center px-6" href="/bookings">Перейти в «Мои записи»</Link>
+          </div>
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+function PaymentOption({ active, children, description, label, onClick }: { active: boolean; children: React.ReactNode; description: string; label: string; onClick: () => void }) {
+  return (
+    <button aria-pressed={active} className={`flex min-h-24 items-center gap-4 rounded-md border p-4 text-left transition sm:p-5 ${active ? "border-[var(--gold)] bg-[rgba(232,197,122,0.08)]" : "border-[var(--line)] bg-black/20 hover:border-[rgba(232,197,122,0.42)]"}`} onClick={onClick} type="button">
+      <span className="flex size-14 shrink-0 items-center justify-center rounded-md bg-[rgba(232,197,122,0.1)] text-[var(--gold-light)]">{children}</span>
+      <span className="min-w-0 flex-1"><strong className="block text-base text-white">{label}</strong><span className="mt-1 block text-sm text-[var(--muted)]">{description}</span></span>
+      <span className={`size-5 shrink-0 rounded-full border-2 p-1 ${active ? "border-[var(--gold)]" : "border-white/30"}`}><span className={`block size-full rounded-full ${active ? "bg-[var(--gold)]" : ""}`} /></span>
+    </button>
+  );
+}
+
+function CardIcon() { return <svg aria-hidden="true" className="size-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.7"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 9.5h19M6 15h4"/></svg>; }
+function SbpIcon() { return <svg aria-hidden="true" className="size-9" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.6"><path d="m6 3 6 6-3 3-6-6 3-3Zm12 6 3 3-6 6-3-3 6-6ZM6 15l3 3-3 3-3-3 3-3Zm6-6 3 3-3 3-3-3 3-3Z"/></svg>; }

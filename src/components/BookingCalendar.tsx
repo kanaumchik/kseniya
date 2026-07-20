@@ -85,6 +85,7 @@ export function BookingCalendar({
   const durationLabel = bookingType === "SESSION" ? "90 минут" : "60 минут";
   const appointmentTypeLabel = bookingType === "SESSION" ? "Сессия" : "Диагностика";
   const requiresBookingConsents = role !== "ADMIN" && !rescheduleBookingId;
+  const proceedsToPayment = role !== "ADMIN" && !rescheduleBookingId && bookingType === "SESSION";
 
   return (
     <section className="space-y-4 sm:space-y-5">
@@ -224,11 +225,12 @@ export function BookingCalendar({
             ...(role === "ADMIN" && !rescheduleBookingId ? [{ name: "userId", value: selectedUserId || currentUser?.id }] : []),
           ]}
           onSecondary={() => setPendingSlot(null)}
-          primaryLabel={rescheduleBookingId ? "Перенести запись" : "Подтвердить запись"}
+          primaryLabel={rescheduleBookingId ? "Перенести запись" : proceedsToPayment ? "Перейти к оплате" : "Подтвердить запись"}
           secondaryLabel="Выбрать другое время"
           secondaryFirst
           title={rescheduleBookingId ? "Подтвердите дату и время" : "Подтвердите дату и время"}
           formContent={requiresBookingConsents ? <BookingConsentFields /> : null}
+          wide={requiresBookingConsents}
         >
           <div className="grid gap-4">
             {rescheduleBookingId && rescheduleFromLabel ? (
@@ -275,7 +277,7 @@ export function BookingCalendar({
 
 function BookingConsentFields() {
   return (
-    <div className="grid gap-2 rounded-md border border-white/[0.08] bg-black/18 p-3 text-sm leading-6 text-white/74">
+    <div className="grid gap-2 rounded-md border border-white/[0.08] bg-black/18 p-3 text-sm leading-6 text-white/74 lg:text-[0.82rem] xl:text-sm">
       <label className="flex gap-3">
         <input className="mt-1 size-4 shrink-0 accent-[var(--gold)]" name="offerAccepted" required type="checkbox" value="accepted" />
         <span>

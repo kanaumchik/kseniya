@@ -23,6 +23,7 @@ type ConfirmDialogProps = {
   onSecondary: () => void;
   secondarySubmits?: boolean;
   secondaryFirst?: boolean;
+  wide?: boolean;
 };
 
 export function ConfirmDialog({
@@ -41,6 +42,7 @@ export function ConfirmDialog({
   onSecondary,
   secondarySubmits = false,
   secondaryFirst = false,
+  wide = false,
 }: ConfirmDialogProps) {
   useEffect(() => {
     function closeOnEscape(event: KeyboardEvent) {
@@ -90,7 +92,7 @@ export function ConfirmDialog({
         }
       }}
     >
-      <div className="relative w-full max-w-xl overflow-hidden rounded-md border border-[rgba(232,197,122,0.22)] bg-[linear-gradient(145deg,rgba(21,20,18,0.98),rgba(9,9,8,0.98))] shadow-2xl shadow-black">
+      <div className={`relative w-full ${wide ? "max-w-5xl" : "max-w-xl"} overflow-hidden rounded-md border border-[rgba(232,197,122,0.22)] bg-[linear-gradient(145deg,rgba(21,20,18,0.98),rgba(9,9,8,0.98))] shadow-2xl shadow-black`}>
         <button className="icon-button absolute right-4 top-4 z-10" type="button" onClick={onSecondary} aria-label="Закрыть">
           ×
         </button>
