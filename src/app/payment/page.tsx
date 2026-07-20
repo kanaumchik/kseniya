@@ -3,7 +3,6 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { PaymentCheckout } from "@/components/PaymentCheckout";
 import { ProfileMenu } from "@/components/ProfileMenu";
-import { prisma } from "@/lib/prisma";
 import { formatDateTime } from "@/lib/time";
 
 const packagePrices: Record<string, number> = {
@@ -12,25 +11,25 @@ const packagePrices: Record<string, number> = {
   "От хаоса к гармонии и порядку": 24000,
 };
 
-export default async function PaymentPage({ searchParams }: { searchParams: Promise<{ bookingId?: string }> }) {
+export default async function PaymentPage({ searchParams }: { searchParams: Promise<{ startsAt?: string; timeZone?: string; packageTitle?: string; paymentNotice?: string }> }) {
   const session = await auth();
   if (!session?.user) redirect("/");
   if (session.user.role === "ADMIN") redirect("/history");
 
-  const { bookingId } = await searchParams;
-  const id = Number(bookingId);
-  if (!Number.isInteger(id) || id <= 0) notFound();
+  const { startsAt, timeZone, packageTitle, paymentNotice } = await searchParams;
+  const startsAtDate = new Date(startsAt ?? "");
+  if (!startsAt || !timeZone || Number.isNaN(startsAtDate.getTime())) notFound();
 
-  const booking = await prisma.booking.findFirst({
-    where: { id, userId: Number(session.user.id), type: "SESSION" },
-    select: { startsAt: true, clientTimeZone: true, packageTitle: true, user: { select: { name: true } } },
-  });
-  if (!booking) notFound();
-
-  const serviceTitle = booking.packageTitle ?? "Индивидуальная психологическая сессия";
-  const amount = booking.packageTitle ? packagePrices[booking.packageTitle] ?? 4000 : 4000;
+  const normalizedPackageTitle = packageTitle && packagePrices[packageTitle] ? packageTitle : undefined;
+  const serviceTitle = normalizedPackageTitle ?? "Индивидуальная психологическая сессия";
+  const amount = normalizedPackageTitle ? packagePrices[normalizedPackageTitle] : 4000;
   const amountLabel = `${new Intl.NumberFormat("ru-RU").format(amount)} ₽`;
-  const bookingLabel = `${formatDateTime(booking.startsAt, booking.clientTimeZone)} · 90 минут`;
+  let bookingLabel: string;
+  try {
+    bookingLabel = `${formatDateTime(startsAtDate, timeZone)} · 90 минут`;
+  } catch {
+    notFound();
+  }
 
   return (
     <main className="min-h-screen bg-[var(--background)] text-white">
@@ -40,11 +39,11 @@ export default async function PaymentPage({ searchParams }: { searchParams: Prom
             <p className="font-serif text-lg uppercase tracking-[0.12em] text-[var(--gold-light)]">Ксения Наумчик</p>
             <p className="mt-1 text-[0.62rem] uppercase tracking-[0.3em] text-[var(--muted)]">Автор трансформационных программ</p>
           </Link>
-          <ProfileMenu name={booking.user.name} role={session.user.role} />
+          <ProfileMenu name={session.user.name ?? "Профиль"} role={session.user.role} />
         </div>
       </header>
       <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:py-12">
-        <PaymentCheckout amountLabel={amountLabel} bookingLabel={bookingLabel} serviceTitle={serviceTitle} />
+        <PaymentCheckout amountLabel={amountLabel} bookingLabel={bookingLabel} packageTitle={normalizedPackageTitle} paymentNotice={paymentNotice === "shown"} serviceTitle={serviceTitle} startsAt={startsAtDate.toISOString()} timeZone={timeZone} />
       </div>
     </main>
   );

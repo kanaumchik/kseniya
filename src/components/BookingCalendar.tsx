@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { adminCreateBookingAction, createBookingAction, rescheduleBookingAction } from "@/app/actions";
+import { adminCreateBookingAction, createBookingAction, prepareBookingPaymentAction, rescheduleBookingAction } from "@/app/actions";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { bookingDurations, type BookingType, type Slot, groupSlotsByDate } from "@/lib/slots";
 import { formatTimeOnly, supportedTimeZones } from "@/lib/time";
@@ -77,7 +77,13 @@ export function BookingCalendar({
     });
   }, [currentUser, users]);
   const selectedUser = userOptions.find((user) => user.id === selectedUserId) ?? currentUser;
-  const action = rescheduleBookingId ? rescheduleBookingAction : role === "ADMIN" ? adminCreateBookingAction : createBookingAction;
+  const action = rescheduleBookingId
+    ? rescheduleBookingAction
+    : role === "ADMIN"
+      ? adminCreateBookingAction
+      : bookingType === "SESSION"
+        ? prepareBookingPaymentAction
+        : createBookingAction;
   const pendingDateKey = pendingSlot ? formatSlotDateKey(pendingSlot.startsAt, selectedTimeZone) : "";
   const pendingDateLabel = pendingDateKey ? formatDateLabel(pendingDateKey) : "";
   const pendingTimeLabel = pendingSlot ? formatTimeOnly(new Date(pendingSlot.startsAt), selectedTimeZone) : "";

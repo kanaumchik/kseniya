@@ -137,6 +137,38 @@ export async function registerAction(_previousState: string | undefined, formDat
   }
 }
 
+export async function prepareBookingPaymentAction(formData: FormData) {
+  const session = await requireSession();
+  const userId = getSessionUserId(session);
+
+  if (session.user.role === "ADMIN") {
+    throw new Error("Перейти к оплате может только клиент.");
+  }
+
+  assertBookingLegalConsents(formData);
+
+  const bookingType = normalizeBookingType(String(formData.get("type") ?? "DIAGNOSTIC"));
+  if (bookingType !== "SESSION") {
+    throw new Error("Бесплатная диагностика не требует оплаты.");
+  }
+
+  const packageTitle = normalizePackageTitle(formData.get("packageTitle"));
+  const selectedSlot = parseSlotDates(formData);
+  const endsAt = getBookingEnd(selectedSlot.startsAt, bookingType);
+  await ensureUserSlotCanBeBooked(selectedSlot.startsAt, endsAt);
+  const clientTimeZone = await getClientTimeZone(userId, formData.get("timeZone"), session.user.timeZone);
+  const paymentParams = new URLSearchParams({
+    startsAt: selectedSlot.startsAt.toISOString(),
+    timeZone: clientTimeZone,
+  });
+
+  if (packageTitle) {
+    paymentParams.set("packageTitle", packageTitle);
+  }
+
+  redirect(`/payment?${paymentParams.toString()}`);
+}
+
 export async function createBookingAction(formData: FormData) {
   const session = await requireSession();
   const userId = getSessionUserId(session);
@@ -148,6 +180,10 @@ export async function createBookingAction(formData: FormData) {
   assertBookingLegalConsents(formData);
 
   const bookingType = normalizeBookingType(String(formData.get("type") ?? "DIAGNOSTIC"));
+  const paymentFinalization = String(formData.get("paymentFinalization") ?? "") === "accepted";
+  if (bookingType === "SESSION" && !paymentFinalization) {
+    throw new Error("Платная запись создаётся только после подтверждения оплаты.");
+  }
   const packageTitle = bookingType === "SESSION" ? normalizePackageTitle(formData.get("packageTitle")) : null;
   const selectedSlot = parseSlotDates(formData);
   const startsAt = selectedSlot.startsAt;
@@ -174,6 +210,7 @@ export async function createBookingAction(formData: FormData) {
     packageTitle,
     timeZone: clientTimeZone,
     userId,
+    buttonLabel: paymentFinalization ? "Оплатить" : "Подтвердить запись",
   });
 
   const bookingUser = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
@@ -185,7 +222,18 @@ export async function createBookingAction(formData: FormData) {
   });
 
   revalidateDashboard();
-  redirect(bookingType === "SESSION" ? `/payment?bookingId=${booking.id}` : "/bookings");
+  if (paymentFinalization) {
+    const paymentParams = new URLSearchParams({
+      startsAt: startsAt.toISOString(),
+      timeZone: clientTimeZone,
+      paymentNotice: "shown",
+    });
+    if (packageTitle) {
+      paymentParams.set("packageTitle", packageTitle);
+    }
+    redirect(`/payment?${paymentParams.toString()}`);
+  }
+  redirect("/bookings");
 }
 
 async function recordRegistrationConsents({
@@ -259,12 +307,14 @@ async function recordBookingConsents({
   packageTitle,
   timeZone,
   userId,
+  buttonLabel,
 }: {
   appointmentId: number;
   bookingKind: "session" | "diagnostic";
   packageTitle: string | null;
   timeZone: string;
   userId: number;
+  buttonLabel: string;
 }) {
   const consents: Array<{ checkboxLabel: string; consentType: ConsentType; documentCode: Parameters<typeof recordConsentEvent>[0]["documentCode"] }> = [
     {
@@ -294,7 +344,7 @@ async function recordBookingConsents({
       action: "checkbox_acceptance",
       appointmentId,
       bookingKind,
-      buttonLabel: bookingKind === "session" ? "Перейти к оплате" : "Подтвердить запись",
+      buttonLabel,
       checkboxLabel: consent.checkboxLabel,
       consentType: consent.consentType,
       documentCode: consent.documentCode,
