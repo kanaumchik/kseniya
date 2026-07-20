@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { PaymentCheckout } from "@/components/PaymentCheckout";
 import { ProfileMenu } from "@/components/ProfileMenu";
 import { getPaymentOffer } from "@/lib/payment-catalog";
+import { prisma } from "@/lib/prisma";
 import { formatDateTime } from "@/lib/time";
 
 export default async function PaymentPage({ searchParams }: { searchParams: Promise<{ startsAt?: string; endsAt?: string; timeZone?: string; packageTitle?: string }> }) {
@@ -12,6 +13,8 @@ export default async function PaymentPage({ searchParams }: { searchParams: Prom
   if (session.user.role === "ADMIN") redirect("/history");
 
   const { startsAt, endsAt, timeZone, packageTitle } = await searchParams;
+  const user = await prisma.user.findUnique({ where: { id: Number(session.user.id) }, select: { email: true } });
+  if (!user) redirect("/");
   const startsAtDate = new Date(startsAt ?? "");
   const endsAtDate = new Date(endsAt ?? "");
   if (!startsAt || !endsAt || !timeZone || Number.isNaN(startsAtDate.getTime()) || Number.isNaN(endsAtDate.getTime())) notFound();
@@ -40,7 +43,7 @@ export default async function PaymentPage({ searchParams }: { searchParams: Prom
         </div>
       </header>
       <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:py-12">
-        <PaymentCheckout amountLabel={amountLabel} bookingLabel={bookingLabel} packageTitle={normalizedPackageTitle} serviceTitle={serviceTitle} startsAt={startsAtDate.toISOString()} timeZone={timeZone} />
+        <PaymentCheckout amountLabel={amountLabel} bookingLabel={bookingLabel} packageTitle={normalizedPackageTitle} receiptEmail={user.email} serviceTitle={serviceTitle} startsAt={startsAtDate.toISOString()} timeZone={timeZone} />
       </div>
     </main>
   );

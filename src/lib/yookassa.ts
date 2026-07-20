@@ -15,6 +15,7 @@ export type YooKassaPayment = {
 
 export async function createYooKassaPayment({
   amount,
+  customerEmail,
   description,
   idempotenceKey,
   metadata,
@@ -22,6 +23,7 @@ export async function createYooKassaPayment({
   returnUrl,
 }: {
   amount: number;
+  customerEmail: string;
   description: string;
   idempotenceKey: string;
   metadata: Record<string, string>;
@@ -38,6 +40,19 @@ export async function createYooKassaPayment({
       description: description.slice(0, 128),
       metadata,
       payment_method_data: { type: paymentMethod },
+      receipt: {
+        customer: { email: customerEmail },
+        items: [
+          {
+            amount: { value: `${amount}.00`, currency: "RUB" },
+            description: description.slice(0, 128),
+            payment_mode: "full_payment",
+            payment_subject: "service",
+            quantity: "1.00",
+            vat_code: 1,
+          },
+        ],
+      },
     }),
   });
 }

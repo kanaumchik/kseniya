@@ -181,12 +181,17 @@ export async function createPaymentAction(_previousState: string | undefined, fo
     if (Number.isNaN(startsAt.getTime())) return "Некорректное время записи.";
 
     const rawMethod = String(formData.get("paymentMethod") ?? "");
-    if (!(["card", "sbp"] as PaymentMethod[]).includes(rawMethod as PaymentMethod)) return "Выберите способ оплаты.";
+    if (rawMethod !== "card") return "Выбранный способ оплаты пока недоступен.";
+    const receiptEmail = String(formData.get("receiptEmail") ?? "").trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(receiptEmail) || receiptEmail.length > 254) {
+      return "Укажите корректный email для получения чека.";
+    }
 
     const confirmationUrl = await startPayment({
       clientTimeZone: String(formData.get("timeZone") ?? ""),
       packageTitle: normalizePackageTitle(formData.get("packageTitle")) ?? undefined,
       paymentMethod: rawMethod as PaymentMethod,
+      receiptEmail,
       startsAt,
       userId,
     });

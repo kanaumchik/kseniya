@@ -16,12 +16,14 @@ export async function startPayment({
   clientTimeZone,
   packageTitle,
   paymentMethod,
+  receiptEmail,
   startsAt,
   userId,
 }: {
   clientTimeZone: string;
   packageTitle?: string;
   paymentMethod: PaymentMethod;
+  receiptEmail: string;
   startsAt: Date;
   userId: number;
 }) {
@@ -52,6 +54,7 @@ export async function startPayment({
   try {
     const payment = await createYooKassaPayment({
       amount: offer.amount,
+      customerEmail: receiptEmail,
       description: offer.title,
       idempotenceKey,
       metadata: { paymentAttemptId: attempt.id, userId: String(userId) },

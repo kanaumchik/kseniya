@@ -6,7 +6,7 @@ import { createPaymentAction } from "@/app/actions";
 
 type PaymentMethod = "card" | "sbp";
 
-export function PaymentCheckout({ amountLabel, bookingLabel, packageTitle, serviceTitle, startsAt, timeZone }: { amountLabel: string; bookingLabel: string; packageTitle?: string; serviceTitle: string; startsAt: string; timeZone: string }) {
+export function PaymentCheckout({ amountLabel, bookingLabel, packageTitle, receiptEmail, serviceTitle, startsAt, timeZone }: { amountLabel: string; bookingLabel: string; packageTitle?: string; receiptEmail: string; serviceTitle: string; startsAt: string; timeZone: string }) {
   const [method, setMethod] = useState<PaymentMethod>("card");
   const [showLeaveConfirmation, setShowLeaveConfirmation] = useState(false);
   const [paymentError, paymentAction, isPaymentPending] = useActionState(createPaymentAction, undefined);
@@ -23,9 +23,6 @@ export function PaymentCheckout({ amountLabel, bookingLabel, packageTitle, servi
             <PaymentOption active={method === "card"} description="Картой любого российского банка" label="Банковская карта" onClick={() => setMethod("card")}>
               <CardIcon />
             </PaymentOption>
-            <PaymentOption active={method === "sbp"} description="Через приложение банка по СБП" label="Система быстрых платежей" onClick={() => setMethod("sbp")}>
-              <SbpIcon />
-            </PaymentOption>
           </div>
 
           <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -35,6 +32,11 @@ export function PaymentCheckout({ amountLabel, bookingLabel, packageTitle, servi
               <input name="timeZone" type="hidden" value={timeZone} />
               <input name="paymentMethod" type="hidden" value={method} />
               {packageTitle ? <input name="packageTitle" type="hidden" value={packageTitle} /> : null}
+              <label className="mb-4 block text-sm text-[var(--muted)]">
+                <span className="mb-2 block font-semibold text-white">Email для получения чека</span>
+                <input className="min-h-12 w-full rounded-md border border-[var(--line)] bg-black/30 px-4 text-white outline-none transition focus:border-[var(--gold)]" defaultValue={receiptEmail} maxLength={254} name="receiptEmail" required type="email" />
+                <span className="mt-2 block text-xs leading-5">Можно указать другой адрес. Email профиля не изменится.</span>
+              </label>
               <button className="primary-button min-h-12 w-full px-8 disabled:cursor-wait disabled:opacity-70" disabled={isPaymentPending} type="submit">{isPaymentPending ? "Переходим к оплате…" : `Оплатить ${amountLabel}`}</button>
               {paymentError ? <p className="mt-3 text-center text-sm text-red-300" role="alert">{paymentError}</p> : null}
               <p className="mt-3 text-center text-xs leading-5 text-[var(--muted)]">После оплаты ссылка для подключения к онлайн-встрече появится в личном кабинете.</p>
@@ -82,4 +84,3 @@ function PaymentOption({ active, children, description, label, onClick }: { acti
 }
 
 function CardIcon() { return <svg aria-hidden="true" className="size-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.7"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 9.5h19M6 15h4"/></svg>; }
-function SbpIcon() { return <svg aria-hidden="true" className="size-9" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.6"><path d="m6 3 6 6-3 3-6-6 3-3Zm12 6 3 3-6 6-3-3 6-6ZM6 15l3 3-3 3-3-3 3-3Zm6-6 3 3-3 3-3-3 3-3Z"/></svg>; }
