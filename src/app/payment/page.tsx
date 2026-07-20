@@ -3,27 +3,23 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { PaymentCheckout } from "@/components/PaymentCheckout";
 import { ProfileMenu } from "@/components/ProfileMenu";
+import { getPaymentOffer } from "@/lib/payment-catalog";
 import { formatDateTime } from "@/lib/time";
 
-const packagePrices: Record<string, number> = {
-  "Запуск трансформации": 10000,
-  "Глубина и поддержка": 20000,
-  "От хаоса к гармонии и порядку": 24000,
-};
-
-export default async function PaymentPage({ searchParams }: { searchParams: Promise<{ startsAt?: string; endsAt?: string; timeZone?: string; packageTitle?: string; paymentNotice?: string }> }) {
+export default async function PaymentPage({ searchParams }: { searchParams: Promise<{ startsAt?: string; endsAt?: string; timeZone?: string; packageTitle?: string }> }) {
   const session = await auth();
   if (!session?.user) redirect("/");
   if (session.user.role === "ADMIN") redirect("/history");
 
-  const { startsAt, endsAt, timeZone, packageTitle, paymentNotice } = await searchParams;
+  const { startsAt, endsAt, timeZone, packageTitle } = await searchParams;
   const startsAtDate = new Date(startsAt ?? "");
   const endsAtDate = new Date(endsAt ?? "");
   if (!startsAt || !endsAt || !timeZone || Number.isNaN(startsAtDate.getTime()) || Number.isNaN(endsAtDate.getTime())) notFound();
 
-  const normalizedPackageTitle = packageTitle && packagePrices[packageTitle] ? packageTitle : undefined;
-  const serviceTitle = normalizedPackageTitle ?? "Индивидуальная психологическая сессия";
-  const amount = normalizedPackageTitle ? packagePrices[normalizedPackageTitle] : 4000;
+  const offer = getPaymentOffer(packageTitle);
+  const normalizedPackageTitle = offer.packageTitle ?? undefined;
+  const serviceTitle = offer.title;
+  const amount = offer.amount;
   const amountLabel = `${new Intl.NumberFormat("ru-RU").format(amount)} ₽`;
   let bookingLabel: string;
   try {
@@ -44,7 +40,7 @@ export default async function PaymentPage({ searchParams }: { searchParams: Prom
         </div>
       </header>
       <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:py-12">
-        <PaymentCheckout amountLabel={amountLabel} bookingLabel={bookingLabel} endsAt={endsAtDate.toISOString()} packageTitle={normalizedPackageTitle} paymentNotice={paymentNotice === "shown"} serviceTitle={serviceTitle} startsAt={startsAtDate.toISOString()} timeZone={timeZone} />
+        <PaymentCheckout amountLabel={amountLabel} bookingLabel={bookingLabel} packageTitle={normalizedPackageTitle} serviceTitle={serviceTitle} startsAt={startsAtDate.toISOString()} timeZone={timeZone} />
       </div>
     </main>
   );

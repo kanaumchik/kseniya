@@ -8,47 +8,74 @@ datasource db {
 }
 
 model User {
-  id           Int            @id @default(autoincrement())
-  email        String         @unique
-  name         String
-  passwordHash String
-  role         String         @default("USER")
-  timeZone     String
-  gender       String?
-  birthDate    String?
-  city         String?
-  phone        String?
-  photoPath    String?
-  source       String?
-  createdAt    DateTime       @default(now())
-  bookings     Booking[]
-  courses      ClientCourse[]
-  consentEvents ConsentEvent[]
+  id              Int              @id @default(autoincrement())
+  email           String           @unique
+  name            String
+  passwordHash    String
+  role            String           @default("USER")
+  timeZone        String
+  gender          String?
+  birthDate       String?
+  city            String?
+  phone           String?
+  photoPath       String?
+  source          String?
+  createdAt       DateTime         @default(now())
+  bookings        Booking[]
+  payments        Payment[]
+  courses         ClientCourse[]
+  consentEvents   ConsentEvent[]
   analyticsEvents AnalyticsEvent[]
 }
 
 model Booking {
-  id               Int       @id @default(autoincrement())
+  id               Int            @id @default(autoincrement())
   userId           Int
-  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   startsAt         DateTime
   endsAt           DateTime
   clientTimeZone   String
-  type             String    @default("DIAGNOSTIC")
+  type             String         @default("DIAGNOSTIC")
   packageTitle     String?
   diagnosticNumber Int?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-  status           String    @default("ACTIVE")
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  status           String         @default("ACTIVE")
   cancelledAt      DateTime?
   rescheduledAt    DateTime?
   consentEvents    ConsentEvent[]
+  payment          Payment?
 
   @@index([startsAt])
   @@index([startsAt, endsAt])
   @@index([status, startsAt])
   @@index([type, startsAt])
   @@index([diagnosticNumber])
+}
+
+model Payment {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  providerPaymentId String?  @unique @map("provider_payment_id")
+  idempotenceKey    String   @unique @map("idempotence_key") @db.Uuid
+  userId            Int      @map("user_id")
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookingId         Int?     @unique @map("booking_id")
+  booking           Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  startsAt          DateTime @map("starts_at") @db.Timestamptz(6)
+  endsAt            DateTime @map("ends_at") @db.Timestamptz(6)
+  clientTimeZone    String   @map("client_time_zone")
+  packageTitle      String?  @map("package_title")
+  amount            Int
+  currency          String   @default("RUB")
+  paymentMethod     String   @map("payment_method")
+  status            String   @default("CREATED")
+  confirmationUrl   String?  @map("confirmation_url")
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@map("payments")
 }
 
 model ClientCourse {

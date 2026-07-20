@@ -11,6 +11,7 @@ import { hashPassword, verifyPassword } from "@/lib/password";
 import { prisma } from "@/lib/prisma";
 import { getAppHomeUrl } from "@/lib/site-url";
 import { notifyAppointmentSafely } from "@/lib/notifications";
+import { startPayment, type PaymentMethod } from "@/lib/payment-service";
 import {
   allowedSlotDurations,
   bookingDurations,
@@ -170,6 +171,33 @@ export async function prepareBookingPaymentAction(formData: FormData) {
   redirect(`/payment?${paymentParams.toString()}`);
 }
 
+export async function createPaymentAction(_previousState: string | undefined, formData: FormData) {
+  try {
+    const session = await requireSession();
+    const userId = getSessionUserId(session);
+    if (session.user.role === "ADMIN") return "Оплата доступна только клиенту.";
+
+    const startsAt = new Date(String(formData.get("startsAt") ?? ""));
+    if (Number.isNaN(startsAt.getTime())) return "Некорректное время записи.";
+
+    const rawMethod = String(formData.get("paymentMethod") ?? "");
+    if (!(["card", "sbp"] as PaymentMethod[]).includes(rawMethod as PaymentMethod)) return "Выберите способ оплаты.";
+
+    const confirmationUrl = await startPayment({
+      clientTimeZone: String(formData.get("timeZone") ?? ""),
+      packageTitle: normalizePackageTitle(formData.get("packageTitle")) ?? undefined,
+      paymentMethod: rawMethod as PaymentMethod,
+      startsAt,
+      userId,
+    });
+    redirect(confirmationUrl);
+  } catch (error) {
+    if (error && typeof error === "object" && "digest" in error) throw error;
+    console.error("Не удалось создать платёж YooKassa:", error instanceof Error ? error.message : error);
+    return error instanceof Error ? error.message : "Не удалось перейти к оплате. Попробуйте ещё раз.";
+  }
+}
+
 export async function createBookingAction(formData: FormData) {
   const session = await requireSession();
   const userId = getSessionUserId(session);
@@ -181,11 +209,8 @@ export async function createBookingAction(formData: FormData) {
   assertBookingLegalConsents(formData);
 
   const bookingType = normalizeBookingType(String(formData.get("type") ?? "DIAGNOSTIC"));
-  const paymentFinalization = String(formData.get("paymentFinalization") ?? "") === "accepted";
-  if (bookingType === "SESSION" && !paymentFinalization) {
-    throw new Error("Платная запись создаётся только после подтверждения оплаты.");
-  }
-  const packageTitle = bookingType === "SESSION" ? normalizePackageTitle(formData.get("packageTitle")) : null;
+  if (bookingType === "SESSION") throw new Error("Платная запись создаётся только после подтверждения платежа YooKassa.");
+  const packageTitle = null;
   const selectedSlot = parseSlotDates(formData);
   const startsAt = selectedSlot.startsAt;
   const endsAt = getBookingEnd(startsAt, bookingType);
@@ -198,20 +223,20 @@ export async function createBookingAction(formData: FormData) {
       startsAt,
       endsAt,
       clientTimeZone,
-      type: bookingType,
+      type: "DIAGNOSTIC",
       packageTitle,
-      ...(bookingType === "DIAGNOSTIC" ? { diagnosticNumber: await getNextDiagnosticNumber() } : {}),
+      diagnosticNumber: await getNextDiagnosticNumber(),
       status: "ACTIVE",
     },
   });
 
   await recordBookingConsents({
     appointmentId: booking.id,
-    bookingKind: bookingType === "SESSION" ? "session" : "diagnostic",
+    bookingKind: "diagnostic",
     packageTitle,
     timeZone: clientTimeZone,
     userId,
-    buttonLabel: paymentFinalization ? "Оплатить" : "Подтвердить запись",
+    buttonLabel: "Подтвердить запись",
   });
 
   const bookingUser = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
@@ -219,22 +244,10 @@ export async function createBookingAction(formData: FormData) {
     clientName: bookingUser?.name ?? session.user.name ?? "Клиент",
     event: "booked",
     startsAt,
-    type: bookingType,
+    type: "DIAGNOSTIC",
   });
 
   revalidateDashboard();
-  if (paymentFinalization) {
-    const paymentParams = new URLSearchParams({
-      startsAt: startsAt.toISOString(),
-      endsAt: endsAt.toISOString(),
-      timeZone: clientTimeZone,
-      paymentNotice: "shown",
-    });
-    if (packageTitle) {
-      paymentParams.set("packageTitle", packageTitle);
-    }
-    redirect(`/payment?${paymentParams.toString()}`);
-  }
   redirect("/bookings");
 }
 

@@ -1,15 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { createBookingAction } from "@/app/actions";
+import { useActionState, useState } from "react";
+import { createPaymentAction } from "@/app/actions";
 
 type PaymentMethod = "card" | "sbp";
 
-export function PaymentCheckout({ amountLabel, bookingLabel, endsAt, packageTitle, paymentNotice = false, serviceTitle, startsAt, timeZone }: { amountLabel: string; bookingLabel: string; endsAt: string; packageTitle?: string; paymentNotice?: boolean; serviceTitle: string; startsAt: string; timeZone: string }) {
+export function PaymentCheckout({ amountLabel, bookingLabel, packageTitle, serviceTitle, startsAt, timeZone }: { amountLabel: string; bookingLabel: string; packageTitle?: string; serviceTitle: string; startsAt: string; timeZone: string }) {
   const [method, setMethod] = useState<PaymentMethod>("card");
-  const [showNotice] = useState(paymentNotice);
   const [showLeaveConfirmation, setShowLeaveConfirmation] = useState(false);
+  const [paymentError, paymentAction, isPaymentPending] = useActionState(createPaymentAction, undefined);
 
   return (
     <>
@@ -30,19 +30,13 @@ export function PaymentCheckout({ amountLabel, bookingLabel, endsAt, packageTitl
 
           <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:items-start sm:justify-between">
             <button className="secondary-button inline-flex min-h-12 items-center justify-center px-5" onClick={() => setShowLeaveConfirmation(true)} type="button">Вернуться в мои записи</button>
-            <form action={createBookingAction} className="sm:max-w-sm">
+            <form action={paymentAction} className="sm:max-w-sm">
               <input name="startsAt" type="hidden" value={startsAt} />
-              <input name="endsAt" type="hidden" value={endsAt} />
               <input name="timeZone" type="hidden" value={timeZone} />
-              <input name="type" type="hidden" value="SESSION" />
-              <input name="paymentFinalization" type="hidden" value="accepted" />
               <input name="paymentMethod" type="hidden" value={method} />
-              <input name="offerAccepted" type="hidden" value="accepted" />
-              <input name="bookingRulesAccepted" type="hidden" value="accepted" />
-              <input name="informedConsentAccepted" type="hidden" value="accepted" />
-              <input name="sensitiveDataConsent" type="hidden" value="accepted" />
               {packageTitle ? <input name="packageTitle" type="hidden" value={packageTitle} /> : null}
-              <button className="primary-button min-h-12 w-full px-8" type="submit">Оплатить {amountLabel}</button>
+              <button className="primary-button min-h-12 w-full px-8 disabled:cursor-wait disabled:opacity-70" disabled={isPaymentPending} type="submit">{isPaymentPending ? "Переходим к оплате…" : `Оплатить ${amountLabel}`}</button>
+              {paymentError ? <p className="mt-3 text-center text-sm text-red-300" role="alert">{paymentError}</p> : null}
               <p className="mt-3 text-center text-xs leading-5 text-[var(--muted)]">После оплаты ссылка для подключения к онлайн-встрече появится в личном кабинете.</p>
             </form>
           </div>
@@ -60,17 +54,6 @@ export function PaymentCheckout({ amountLabel, bookingLabel, endsAt, packageTitl
           </div>
         </aside>
       </div>
-
-      {showNotice ? (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm" role="dialog" aria-modal="true">
-          <div className="w-full max-w-lg rounded-md border border-[rgba(232,197,122,0.24)] bg-[#10100f] p-6 text-center shadow-2xl shadow-black sm:p-8">
-            <div className="mx-auto flex size-12 items-center justify-center rounded-full border border-[var(--line)] text-2xl text-[var(--gold-light)]">i</div>
-            <h2 className="mt-5 font-serif text-2xl leading-tight text-[var(--gold-light)]">Функционал оплаты на сайте в разработке</h2>
-            <p className="mt-3 text-sm leading-6 text-[var(--muted)]">Ваша запись уже сохранена. Перейдите в раздел «Мои записи».</p>
-            <Link className="primary-button mt-6 inline-flex min-h-12 w-full items-center justify-center px-6" href="/bookings">Перейти в «Мои записи»</Link>
-          </div>
-        </div>
-      ) : null}
 
       {showLeaveConfirmation ? (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm" role="dialog" aria-modal="true">
