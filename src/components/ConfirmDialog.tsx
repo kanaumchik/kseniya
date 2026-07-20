@@ -64,6 +64,7 @@ export function ConfirmDialog({
 
   const primaryButton = (
     <button
+      key="primary"
       className="primary-button min-h-14 w-full px-5 py-3 text-base"
       disabled={primaryDisabled}
       form={primaryForm}
@@ -74,7 +75,7 @@ export function ConfirmDialog({
     </button>
   );
   const secondaryButton = (
-    <button className="secondary-button min-h-10 w-full px-4 py-2.5 text-sm" type={secondarySubmits ? "submit" : "button"} onClick={secondarySubmits ? undefined : onSecondary}>
+    <button key="secondary" className="secondary-button min-h-10 w-full px-4 py-2.5 text-sm" type={secondarySubmits ? "submit" : "button"} onClick={secondarySubmits ? undefined : onSecondary}>
       {secondaryLabel}
     </button>
   );
