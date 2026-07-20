@@ -29,6 +29,19 @@ async function main() {
     },
   });
 
+  await Promise.all([
+    prisma.promoCode.upsert({
+      where: { normalizedCode: "СКИДКА2026" },
+      update: { code: "Скидка2026", discountedAmount: 3500 },
+      create: { code: "Скидка2026", normalizedCode: "СКИДКА2026", discountedAmount: 3500 },
+    }),
+    prisma.promoCode.upsert({
+      where: { normalizedCode: "СПЕШЛФОРОЛЕГБАСОВ" },
+      update: { code: "СпешлФорОлегБасов", discountedAmount: 100 },
+      create: { code: "СпешлФорОлегБасов", normalizedCode: "СПЕШЛФОРОЛЕГБАСОВ", discountedAmount: 100 },
+    }),
+  ]);
+
   await prisma.$executeRaw`
     SELECT setval(pg_get_serial_sequence('"User"', 'id'), COALESCE((SELECT MAX(id) FROM "User"), 1))
   `;

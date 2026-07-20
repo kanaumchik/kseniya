@@ -2,14 +2,20 @@
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
-import { createPaymentAction } from "@/app/actions";
+import { createPaymentAction, validatePromoCodeAction } from "@/app/actions";
 
 type PaymentMethod = "card" | "sbp";
 
-export function PaymentCheckout({ amountLabel, bookingLabel, packageTitle, receiptEmail, serviceTitle, startsAt, timeZone }: { amountLabel: string; bookingLabel: string; packageTitle?: string; receiptEmail: string; serviceTitle: string; startsAt: string; timeZone: string }) {
+export function PaymentCheckout({ amount, amountLabel, bookingLabel, packageTitle, receiptEmail, serviceTitle, startsAt, timeZone }: { amount: number; amountLabel: string; bookingLabel: string; packageTitle?: string; receiptEmail: string; serviceTitle: string; startsAt: string; timeZone: string }) {
   const [method, setMethod] = useState<PaymentMethod>("card");
+  const [promoCode, setPromoCode] = useState("");
   const [showLeaveConfirmation, setShowLeaveConfirmation] = useState(false);
   const [paymentError, paymentAction, isPaymentPending] = useActionState(createPaymentAction, undefined);
+  const [promoState, promoAction, isPromoPending] = useActionState(validatePromoCodeAction, {});
+  const normalizedPromoCode = promoCode.trim().toLocaleUpperCase("ru-RU");
+  const appliedPromoAmount = !packageTitle && promoState.code === normalizedPromoCode ? promoState.amount : undefined;
+  const payableAmount = appliedPromoAmount ?? amount;
+  const payableLabel = formatRubles(payableAmount);
 
   return (
     <>
@@ -32,12 +38,22 @@ export function PaymentCheckout({ amountLabel, bookingLabel, packageTitle, recei
               <input name="timeZone" type="hidden" value={timeZone} />
               <input name="paymentMethod" type="hidden" value={method} />
               {packageTitle ? <input name="packageTitle" type="hidden" value={packageTitle} /> : null}
+              {!packageTitle ? (
+                <div className="mb-4">
+                  <label className="block text-sm font-semibold text-white" htmlFor="promoCode">Промокод</label>
+                  <div className="mt-2 flex gap-2">
+                    <input className="min-h-12 min-w-0 flex-1 rounded-md border border-[var(--line)] bg-black/30 px-4 text-white outline-none transition focus:border-[var(--gold)]" id="promoCode" maxLength={80} name="promoCode" onChange={(event) => setPromoCode(event.target.value)} placeholder="Введите промокод" value={promoCode} />
+                    <button className="secondary-button min-h-12 px-4 disabled:cursor-wait disabled:opacity-70" disabled={isPromoPending || !promoCode.trim()} formAction={promoAction} type="submit">{isPromoPending ? "Проверяем…" : "Применить"}</button>
+                  </div>
+                  {promoState.message ? <p className={`mt-2 text-xs ${appliedPromoAmount ? "text-emerald-300" : "text-red-300"}`}>{promoState.message}</p> : null}
+                </div>
+              ) : null}
               <label className="mb-4 block text-sm text-[var(--muted)]">
                 <span className="mb-2 block font-semibold text-white">Email для получения чека</span>
                 <input className="min-h-12 w-full rounded-md border border-[var(--line)] bg-black/30 px-4 text-white outline-none transition focus:border-[var(--gold)]" defaultValue={receiptEmail} maxLength={254} name="receiptEmail" required type="email" />
                 <span className="mt-2 block text-xs leading-5">Можно указать другой адрес. Email профиля не изменится.</span>
               </label>
-              <button className="primary-button min-h-12 w-full px-8 disabled:cursor-wait disabled:opacity-70" disabled={isPaymentPending} type="submit">{isPaymentPending ? "Переходим к оплате…" : `Оплатить ${amountLabel}`}</button>
+              <button className="primary-button min-h-12 w-full px-8 disabled:cursor-wait disabled:opacity-70" disabled={isPaymentPending} type="submit">{isPaymentPending ? "Переходим к оплате…" : `Оплатить ${payableLabel}`}</button>
               {paymentError ? <p className="mt-3 text-center text-sm text-red-300" role="alert">{paymentError}</p> : null}
               <p className="mt-3 text-center text-xs leading-5 text-[var(--muted)]">После оплаты ссылка для подключения к онлайн-встрече появится в личном кабинете.</p>
             </form>
@@ -51,7 +67,9 @@ export function PaymentCheckout({ amountLabel, bookingLabel, packageTitle, recei
           <div className="mt-5 border-t border-[var(--line)] pt-5">
             <div className="flex items-center justify-between gap-4">
               <span className="text-sm text-[var(--muted)]">К оплате</span>
-              <strong className="text-xl text-[var(--gold-light)]">{amountLabel}</strong>
+              <strong className="text-xl text-[var(--gold-light)]">
+                {appliedPromoAmount ? <><span className="mr-2 text-sm font-normal text-[var(--muted)] line-through">{amountLabel}</span>{payableLabel}</> : amountLabel}
+              </strong>
             </div>
           </div>
         </aside>
@@ -84,3 +102,7 @@ function PaymentOption({ active, children, description, label, onClick }: { acti
 }
 
 function CardIcon() { return <svg aria-hidden="true" className="size-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.7"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 9.5h19M6 15h4"/></svg>; }
+
+function formatRubles(amount: number) {
+  return `${new Intl.NumberFormat("ru-RU").format(amount)} ₽`;
+}

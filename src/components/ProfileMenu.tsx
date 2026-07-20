@@ -70,6 +70,11 @@ export function ProfileMenu({ name, role }: ProfileMenuProps) {
             </Link>
           ) : null}
           {role === "ADMIN" ? (
+            <Link className="block rounded px-3 py-2 text-sm font-medium text-white/82 transition hover:bg-white/[0.06] hover:text-[var(--gold-light)]" href="/promo-codes">
+              Промокоды
+            </Link>
+          ) : null}
+          {role === "ADMIN" ? (
             <Link className="block rounded px-3 py-2 text-sm font-medium text-white/82 transition hover:bg-white/[0.06] hover:text-[var(--gold-light)]" href="/consents">
               Согласия
             </Link>

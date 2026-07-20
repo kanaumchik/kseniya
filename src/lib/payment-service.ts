@@ -6,6 +6,7 @@ import { recordConsentEvent } from "@/lib/consent-audit";
 import { notifyAppointmentSafely } from "@/lib/notifications";
 import { getPaymentOffer } from "@/lib/payment-catalog";
 import { prisma } from "@/lib/prisma";
+import { findActivePromoCode } from "@/lib/promo-codes";
 import { getActiveSlotConflict, isGeneratedSlot, isWithinUserBookingWindow, bookingDurations } from "@/lib/slots";
 import { addMinutes, formatDateKey, psychologistTimeZone, supportedTimeZones } from "@/lib/time";
 import { createYooKassaPayment, getYooKassaPayment, type YooKassaPayment } from "@/lib/yookassa";
@@ -16,6 +17,7 @@ export async function startPayment({
   clientTimeZone,
   packageTitle,
   paymentMethod,
+  promoCode,
   receiptEmail,
   startsAt,
   userId,
@@ -23,6 +25,7 @@ export async function startPayment({
   clientTimeZone: string;
   packageTitle?: string;
   paymentMethod: PaymentMethod;
+  promoCode?: string;
   receiptEmail: string;
   startsAt: Date;
   userId: number;
@@ -35,15 +38,21 @@ export async function startPayment({
 
   const timeZone = supportedTimeZones.some((item) => item.value === clientTimeZone) ? clientTimeZone : user.timeZone;
   const offer = getPaymentOffer(packageTitle);
+  const appliedPromoCode = !offer.packageTitle && promoCode ? await findActivePromoCode(promoCode) : null;
+  const amount = appliedPromoCode && appliedPromoCode.discountedAmount > 0 && appliedPromoCode.discountedAmount < offer.amount
+    ? appliedPromoCode.discountedAmount
+    : offer.amount;
   const idempotenceKey = randomUUID();
   const attempt = await prisma.payment.create({
     data: {
-      amount: offer.amount,
+      amount,
       clientTimeZone: timeZone,
       endsAt,
       idempotenceKey,
       packageTitle: offer.packageTitle,
       paymentMethod,
+      originalAmount: offer.amount,
+      promoCodeId: appliedPromoCode?.id,
       startsAt,
       userId,
     },
@@ -53,7 +62,7 @@ export async function startPayment({
 
   try {
     const payment = await createYooKassaPayment({
-      amount: offer.amount,
+      amount,
       customerEmail: receiptEmail,
       description: offer.title,
       idempotenceKey,

@@ -43,7 +43,7 @@ export default async function PaymentPage({ searchParams }: { searchParams: Prom
         </div>
       </header>
       <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:py-12">
-        <PaymentCheckout amountLabel={amountLabel} bookingLabel={bookingLabel} packageTitle={normalizedPackageTitle} receiptEmail={user.email} serviceTitle={serviceTitle} startsAt={startsAtDate.toISOString()} timeZone={timeZone} />
+        <PaymentCheckout amount={amount} amountLabel={amountLabel} bookingLabel={bookingLabel} packageTitle={normalizedPackageTitle} receiptEmail={user.email} serviceTitle={serviceTitle} startsAt={startsAtDate.toISOString()} timeZone={timeZone} />
       </div>
     </main>
   );

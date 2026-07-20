@@ -12,6 +12,7 @@ import { prisma } from "@/lib/prisma";
 import { getAppHomeUrl } from "@/lib/site-url";
 import { notifyAppointmentSafely } from "@/lib/notifications";
 import { startPayment, type PaymentMethod } from "@/lib/payment-service";
+import { findActivePromoCode, normalizePromoCode } from "@/lib/promo-codes";
 import {
   allowedSlotDurations,
   bookingDurations,
@@ -191,6 +192,7 @@ export async function createPaymentAction(_previousState: string | undefined, fo
       clientTimeZone: String(formData.get("timeZone") ?? ""),
       packageTitle: normalizePackageTitle(formData.get("packageTitle")) ?? undefined,
       paymentMethod: rawMethod as PaymentMethod,
+      promoCode: String(formData.get("promoCode") ?? ""),
       receiptEmail,
       startsAt,
       userId,
@@ -201,6 +203,51 @@ export async function createPaymentAction(_previousState: string | undefined, fo
     console.error("Не удалось создать платёж YooKassa:", error instanceof Error ? error.message : error);
     return error instanceof Error ? error.message : "Не удалось перейти к оплате. Попробуйте ещё раз.";
   }
+}
+
+export type PromoValidationState = {
+  amount?: number;
+  code?: string;
+  message?: string;
+};
+
+export async function validatePromoCodeAction(_previousState: PromoValidationState, formData: FormData): Promise<PromoValidationState> {
+  const session = await requireSession();
+  if (session.user.role === "ADMIN") return { message: "Промокоды доступны только клиентам." };
+  if (normalizePackageTitle(formData.get("packageTitle"))) return { message: "Промокод действует только на разовую сессию." };
+
+  const code = String(formData.get("promoCode") ?? "").trim();
+  if (!code) return { message: "Введите промокод." };
+  const promoCode = await findActivePromoCode(code);
+  if (!promoCode || promoCode.discountedAmount < 1 || promoCode.discountedAmount >= 4000) {
+    return { code: normalizePromoCode(code), message: "Промокод не найден или больше не действует." };
+  }
+
+  return { amount: promoCode.discountedAmount, code: promoCode.normalizedCode, message: "Промокод применён." };
+}
+
+export async function createPromoCodeAction(formData: FormData) {
+  const session = await requireSession();
+  assertAdmin(session.user.role);
+  const code = String(formData.get("code") ?? "").trim();
+  const discountedAmount = Number(formData.get("discountedAmount"));
+  const normalizedCode = normalizePromoCode(code);
+  if (!code || code.length > 80 || !normalizedCode) throw new Error("Укажите промокод длиной до 80 символов.");
+  if (!Number.isInteger(discountedAmount) || discountedAmount < 1 || discountedAmount >= 4000) {
+    throw new Error("Цена по промокоду должна быть от 1 до 3 999 рублей.");
+  }
+
+  await prisma.promoCode.create({ data: { code, discountedAmount, normalizedCode } });
+  revalidatePath("/promo-codes");
+}
+
+export async function togglePromoCodeAction(formData: FormData) {
+  const session = await requireSession();
+  assertAdmin(session.user.role);
+  const id = String(formData.get("id") ?? "");
+  const isActive = String(formData.get("isActive") ?? "") === "true";
+  await prisma.promoCode.update({ where: { id }, data: { isActive } });
+  revalidatePath("/promo-codes");
 }
 
 export async function createBookingAction(formData: FormData) {
