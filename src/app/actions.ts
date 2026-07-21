@@ -182,7 +182,7 @@ export async function createPaymentAction(_previousState: string | undefined, fo
     if (Number.isNaN(startsAt.getTime())) return "Некорректное время записи.";
 
     const rawMethod = String(formData.get("paymentMethod") ?? "");
-    if (rawMethod !== "card") return "Выбранный способ оплаты пока недоступен.";
+    if (rawMethod !== "card" && rawMethod !== "sbp") return "Выбранный способ оплаты пока недоступен.";
     const receiptEmail = String(formData.get("receiptEmail") ?? "").trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(receiptEmail) || receiptEmail.length > 254) {
       return "Укажите корректный email для получения чека.";
