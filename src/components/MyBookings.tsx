@@ -148,7 +148,7 @@ function BookingItem({
             </div>
 
             <BookingModal
-              buttonClassName="!min-h-16 !w-full !px-6 !py-4 !text-lg"
+              buttonClassName="!min-h-12 !w-full !px-4 !py-3 !text-base"
               buttonLabel="Перенести"
               onOpenChange={setIsRescheduleOpen}
               open={isRescheduleOpen}
@@ -171,7 +171,7 @@ function BookingItem({
             </BookingModal>
 
             <button
-              className="primary-button inline-flex min-h-16 w-full items-center justify-center px-6 py-4 text-center text-lg"
+              className="primary-button inline-flex min-h-12 w-full items-center justify-center px-4 py-3 text-center text-base"
               type="button"
               onClick={() => {
                 if (Date.now() < startsAt.getTime() - JOIN_WINDOW_MS) {
