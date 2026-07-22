@@ -137,13 +137,15 @@ function BookingItem({
 
         {canChange ? (
           <div className="grid gap-3 lg:w-80">
-            <button
-              className="justify-self-end rounded px-1 py-1 text-xs font-medium text-red-300 transition-colors hover:text-red-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-300"
-              type="button"
-              onClick={() => setIsCancelConfirmOpen(true)}
-            >
-              Отменить запись
-            </button>
+            <div className="flex justify-end">
+              <button
+                className="w-fit rounded px-1 py-1 text-xs font-medium text-red-300 transition-colors hover:text-red-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-300"
+                type="button"
+                onClick={() => setIsCancelConfirmOpen(true)}
+              >
+                Отменить запись
+              </button>
+            </div>
 
             <BookingModal
               buttonClassName="!min-h-16 !w-full !px-6 !py-4 !text-lg"
