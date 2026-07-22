@@ -6,7 +6,7 @@ type BookingModalProps = {
   buttonLabel: string;
   title: string;
   children: ReactNode;
-  variant?: "primary" | "nav";
+  variant?: "primary" | "nav" | "secondary";
   buttonClassName?: string;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -15,7 +15,9 @@ type BookingModalProps = {
 export function BookingModal({ buttonLabel, title, children, variant = "primary", buttonClassName, open, onOpenChange }: BookingModalProps) {
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const isOpen = open ?? internalIsOpen;
-  const triggerClassName = [variant === "nav" ? "nav-gold-button" : "hero-gold-button", buttonClassName].filter(Boolean).join(" ");
+  const triggerClassName = [variant === "nav" ? "nav-gold-button" : variant === "secondary" ? "secondary-button" : "hero-gold-button", buttonClassName]
+    .filter(Boolean)
+    .join(" ");
   const setIsOpen = useCallback((nextOpen: boolean) => {
     onOpenChange?.(nextOpen);
 

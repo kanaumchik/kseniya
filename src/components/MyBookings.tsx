@@ -9,6 +9,9 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { type Slot } from "@/lib/slots";
 import { formatDateTime, formatTimeRange, supportedTimeZones } from "@/lib/time";
 
+const TELEMOST_URL = "https://telemost.360.yandex.ru/j/6430486441";
+const JOIN_WINDOW_MS = 10 * 60 * 1000;
+
 export type BookingSummary = {
   id: string;
   startsAt: string;
@@ -115,6 +118,7 @@ function BookingItem({
   timeZone: string;
 }) {
   const [isCancelConfirmOpen, setIsCancelConfirmOpen] = useState(false);
+  const [isJoinNoticeOpen, setIsJoinNoticeOpen] = useState(false);
   const [isRescheduleOpen, setIsRescheduleOpen] = useState(false);
   const startsAt = new Date(booking.startsAt);
   const canChange = startsAt > new Date();
@@ -133,13 +137,21 @@ function BookingItem({
 
         {canChange ? (
           <div className="grid gap-3 lg:w-80">
+            <button
+              className="justify-self-end rounded px-1 py-1 text-xs font-medium text-red-300 transition-colors hover:text-red-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-300"
+              type="button"
+              onClick={() => setIsCancelConfirmOpen(true)}
+            >
+              Отменить запись
+            </button>
+
             <BookingModal
               buttonClassName="!min-h-16 !w-full !px-6 !py-4 !text-lg"
               buttonLabel="Перенести"
               onOpenChange={setIsRescheduleOpen}
               open={isRescheduleOpen}
               title="Перенос диагностики"
-              variant="nav"
+              variant="secondary"
             >
               <p className="mb-4 text-sm text-[var(--muted)]">
                 Выберите новую дату. Перед сохранением появится подтверждение переноса.
@@ -156,12 +168,39 @@ function BookingItem({
               />
             </BookingModal>
 
-            <button className="secondary-button !min-h-12 w-full px-4 py-3 text-sm" type="button" onClick={() => setIsCancelConfirmOpen(true)}>
-              Отменить
+            <button
+              className="primary-button inline-flex min-h-16 w-full items-center justify-center px-6 py-4 text-center text-lg"
+              type="button"
+              onClick={() => {
+                if (Date.now() < startsAt.getTime() - JOIN_WINDOW_MS) {
+                  setIsJoinNoticeOpen(true);
+                  return;
+                }
+
+                window.open(TELEMOST_URL, "_blank", "noopener,noreferrer");
+              }}
+            >
+              Подключиться по ссылке
             </button>
           </div>
         ) : null}
       </div>
+
+      {isJoinNoticeOpen ? (
+        <ConfirmDialog
+          description={
+            <>
+              Ссылка станет доступна за 10 минут до начала сессии.
+              <br />
+              Просьба: корректно указать ИМЯ при подключении на встречу
+            </>
+          }
+          onPrimaryClick={() => setIsJoinNoticeOpen(false)}
+          onSecondary={() => setIsJoinNoticeOpen(false)}
+          primaryLabel="Понятно"
+          title="Подключение пока недоступно"
+        />
+      ) : null}
 
       {isCancelConfirmOpen ? (
         <ConfirmDialog

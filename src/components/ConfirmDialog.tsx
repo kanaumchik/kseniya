@@ -16,7 +16,7 @@ type ConfirmDialogProps = {
   action?: (formData: FormData) => void | Promise<void>;
   hiddenFields?: HiddenField[];
   primaryLabel: string;
-  secondaryLabel: string;
+  secondaryLabel?: string;
   primaryDisabled?: boolean;
   primaryForm?: string;
   onPrimaryClick?: () => void;
@@ -74,13 +74,17 @@ export function ConfirmDialog({
       {primaryLabel}
     </button>
   );
-  const secondaryButton = (
+  const secondaryButton = secondaryLabel ? (
     <button key="secondary" className="secondary-button min-h-10 w-full px-4 py-2.5 text-sm" type={secondarySubmits ? "submit" : "button"} onClick={secondarySubmits ? undefined : onSecondary}>
       {secondaryLabel}
     </button>
-  );
-  const buttons = secondaryFirst ? [secondaryButton, primaryButton] : [primaryButton, secondaryButton];
-  const buttonGridClassName = secondaryFirst ? "mt-5 grid gap-3 sm:grid-cols-[0.9fr_1.2fr]" : "mt-5 grid gap-3 sm:grid-cols-[1.2fr_1fr]";
+  ) : null;
+  const buttons = secondaryLabel ? (secondaryFirst ? [secondaryButton, primaryButton] : [primaryButton, secondaryButton]) : [primaryButton];
+  const buttonGridClassName = secondaryLabel
+    ? secondaryFirst
+      ? "mt-5 grid gap-3 sm:grid-cols-[0.9fr_1.2fr]"
+      : "mt-5 grid gap-3 sm:grid-cols-[1.2fr_1fr]"
+    : "mt-5 grid";
 
   return (
     <div
