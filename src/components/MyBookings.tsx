@@ -121,7 +121,6 @@ function BookingItem({
   const [isJoinNoticeOpen, setIsJoinNoticeOpen] = useState(false);
   const [isRescheduleOpen, setIsRescheduleOpen] = useState(false);
   const startsAt = new Date(booking.startsAt);
-  const canChange = startsAt > new Date();
   const timeZoneLabel = supportedTimeZones.find((zone) => zone.value === timeZone)?.label ?? timeZone;
 
   return (
@@ -135,8 +134,7 @@ function BookingItem({
           <p className="mt-2 text-sm text-[var(--muted)]">{booking.type === "SESSION" ? "Продолжительность сессии - 90 минут" : "Продолжительность диагностики - 60 минут"}</p>
         </div>
 
-        {canChange ? (
-          <div className="grid gap-3 lg:w-80">
+        <div className="grid gap-3 lg:w-80">
             <div className="flex justify-end">
               <button
                 className="w-fit rounded px-1 py-1 text-xs font-medium text-red-300 transition-colors hover:text-red-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-300"
@@ -184,8 +182,7 @@ function BookingItem({
             >
               Подключиться по ссылке
             </button>
-          </div>
-        ) : null}
+        </div>
       </div>
 
       {isJoinNoticeOpen ? (
