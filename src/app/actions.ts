@@ -502,10 +502,6 @@ export async function cancelBookingAction(formData: FormData) {
     throw new Error("Активная запись не найдена.");
   }
 
-  if (session.user.role !== "ADMIN" && booking.startsAt <= new Date()) {
-    throw new Error("Прошедшую или уже начавшуюся диагностику нельзя отменить.");
-  }
-
   await prisma.booking.update({
     where: { id: booking.id },
     data: {
@@ -543,10 +539,6 @@ export async function rescheduleBookingAction(formData: FormData) {
   const bookingType = normalizeBookingType(booking.type);
   const startsAt = selectedSlot.startsAt;
   const endsAt = getBookingEnd(startsAt, bookingType);
-
-  if (booking.startsAt <= new Date()) {
-    throw new Error("Прошедшую или уже начавшуюся диагностику нельзя перенести.");
-  }
 
   if (session.user.role === "ADMIN") {
     await ensureSlotCanBeBooked(startsAt, endsAt, booking.id, { admin: true });
